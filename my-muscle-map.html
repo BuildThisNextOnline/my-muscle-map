@@ -1,0 +1,2921 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Muscle Map — MMM</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:wght@300;400;500&display=swap');
+
+:root {
+  --bg: #0a0a0f;
+  --surface: #12121a;
+  --surface2: #1a1a26;
+  --surface3: #22223a;
+  --border: #2a2a40;
+  --text: #e8e8f0;
+  --text-dim: #7a7a9a;
+  --text-dimmer: #3a3a5a;
+  --accent: #6c63ff;
+  --accent2: #ff6b6b;
+  --mono: 'JetBrains Mono', monospace;
+  --sans: 'Syne', sans-serif;
+
+  /* Level colors */
+  --c-untrained: #2a2a3a;
+  --c-beginner: #c0392b;
+  --c-novice: #e67e22;
+  --c-intermediate: #f1c40f;
+  --c-advanced: #2ecc71;
+  --c-elite: #1abc9c;
+  --c-none: #1e1e2e;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: var(--sans);
+  background: var(--bg);
+  color: var(--text);
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── HEADER ── */
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 24px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+  flex-shrink: 0;
+  z-index: 10;
+}
+
+.logo {
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  color: var(--text);
+}
+.logo span { color: var(--accent); }
+
+.header-tabs {
+  display: flex;
+  gap: 4px;
+  background: var(--bg);
+  padding: 3px;
+  border-radius: 8px;
+}
+.header-tab {
+  padding: 6px 16px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: var(--text-dim);
+  font-family: var(--sans);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.header-tab.active {
+  background: var(--surface3);
+  color: var(--text);
+}
+.header-tab:hover:not(.active) { color: var(--text); }
+
+.header-right {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.btn {
+  padding: 7px 16px;
+  border-radius: 7px;
+  border: none;
+  font-family: var(--sans);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.18s;
+}
+.btn-primary {
+  background: var(--accent);
+  color: white;
+}
+.btn-primary:hover { background: #5a52e8; transform: translateY(-1px); }
+.btn-ghost {
+  background: transparent;
+  color: var(--text-dim);
+  border: 1px solid var(--border);
+}
+.btn-ghost:hover { color: var(--text); border-color: var(--text-dim); }
+.btn-sm { padding: 5px 11px; font-size: 12px; }
+.btn-danger { background: #c0392b; color: white; }
+.btn-danger:hover { background: #a93226; }
+.btn-success { background: #27ae60; color: white; }
+.btn-success:hover { background: #229954; }
+
+/* ── MAIN LAYOUT ── */
+.main {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* ── PAGES ── */
+.page { display: none; width: 100%; }
+.page.active { display: flex; flex: 1; overflow: hidden; }
+
+/* ── BODY MAP PAGE ── */
+#page-map {
+  gap: 0;
+}
+
+/* Left: SVG Body */
+.body-panel {
+  flex: 1;
+  min-width: 0;
+  flex-shrink: 0;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.body-panel-header {
+  padding: 14px 16px 10px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.body-panel-header h3 {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-bottom: 10px;
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+  font-family: var(--mono);
+  color: var(--text-dim);
+}
+.legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.body-svgs {
+  flex: 1;
+  display: flex;
+  gap: 0;
+  overflow: hidden;
+  padding: 8px;
+  min-height: 0;
+}
+
+.svg-wrap {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  overflow: hidden;
+}
+.svg-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--text-dimmer);
+  margin-bottom: 4px;
+  flex-shrink: 0;
+}
+.svg-wrap svg {
+  /* Fit within available space — constrained by whichever is smaller, width or height */
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  /* The viewBox is 100×230 (portrait ~0.43 aspect ratio).
+     object-fit equivalent for SVG: let preserveAspectRatio do it */
+  display: block;
+  overflow: visible;
+}
+
+.muscle-path {
+  cursor: pointer;
+  transition: opacity 0.15s, filter 0.15s;
+  stroke: #0a0a0f;
+  stroke-width: 0.8;
+}
+.muscle-path:hover {
+  opacity: 0.85;
+  filter: brightness(1.3);
+}
+.muscle-path.selected {
+  filter: brightness(1.5) drop-shadow(0 0 4px rgba(108,99,255,0.8));
+  stroke: var(--accent);
+  stroke-width: 1.5;
+}
+
+/* Right: Detail panel */
+.detail-panel {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--bg);
+}
+
+.detail-empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-dimmer);
+  gap: 12px;
+}
+.detail-empty svg { opacity: 0.3; }
+.detail-empty p { font-size: 14px; }
+
+.detail-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.detail-header {
+  padding: 16px 20px 12px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.detail-muscle-name {
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+}
+.detail-muscle-group {
+  font-size: 11px;
+  color: var(--text-dim);
+  font-family: var(--mono);
+  margin-top: 2px;
+}
+
+.detail-score-badge {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 3px;
+}
+.score-level {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-family: var(--mono);
+}
+.score-1rm {
+  font-size: 11px;
+  color: var(--text-dim);
+  font-family: var(--mono);
+}
+
+.detail-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Exercises for muscle */
+.section-title {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-bottom: 10px;
+}
+
+.exercise-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.exercise-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+.exercise-card:hover { border-color: var(--accent); background: var(--surface2); }
+.exercise-card.selected-ex { border-color: var(--accent); background: var(--surface2); }
+
+.ex-name { font-size: 13px; font-weight: 600; flex: 1; }
+.ex-meta { font-size: 11px; font-family: var(--mono); color: var(--text-dim); }
+.ex-1rm { font-size: 12px; font-family: var(--mono); color: var(--accent); font-weight: 500; }
+
+/* History chart */
+.chart-container {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px;
+}
+.chart-area {
+  width: 100%;
+  height: 140px;
+  position: relative;
+}
+.chart-area svg { width: 100%; height: 100%; overflow: visible; }
+
+/* Sessions table */
+.sessions-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  font-family: var(--mono);
+}
+.sessions-table th {
+  text-align: left;
+  color: var(--text-dim);
+  font-weight: 500;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--border);
+  font-size: 10px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+.sessions-table td {
+  padding: 7px 8px;
+  border-bottom: 1px solid var(--surface2);
+  color: var(--text);
+}
+.sessions-table tr:last-child td { border-bottom: none; }
+.sessions-table tr:hover td { background: var(--surface2); }
+
+.set-type-badge {
+  font-size: 9px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+.badge-warmup { background: #2a2a3a; color: var(--text-dim); }
+.badge-target { background: rgba(108,99,255,0.2); color: var(--accent); }
+
+/* ── LOG SESSION PAGE ── */
+#page-log {
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+.log-container {
+  max-width: 760px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 24px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.log-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.log-title { font-size: 20px; font-weight: 800; }
+
+.form-row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+  min-width: 120px;
+}
+
+.form-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.form-input, .form-select {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 9px 12px;
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.15s;
+  width: 100%;
+}
+.form-input:focus, .form-select:focus { border-color: var(--accent); }
+.form-select option { background: var(--surface2); }
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px 18px;
+}
+
+.card-title {
+  font-size: 13px;
+  font-weight: 700;
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.sets-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.set-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 12px;
+  font-family: var(--mono);
+}
+.set-row-num {
+  font-weight: 700;
+  color: var(--text-dim);
+  min-width: 28px;
+  font-size: 11px;
+}
+.set-row-info { flex: 1; display: flex; gap: 10px; flex-wrap: wrap; }
+.set-row-val { color: var(--text); }
+.set-row-label { color: var(--text-dimmer); margin-right: 2px; }
+.set-row-1rm { color: var(--accent); margin-left: auto; }
+.set-row-actions { display: flex; gap: 4px; }
+
+.btn-icon {
+  width: 26px;
+  height: 26px;
+  border-radius: 5px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-dim);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  transition: all 0.15s;
+}
+.btn-icon:hover { background: var(--surface3); color: var(--text); }
+.btn-icon.edit:hover { border-color: var(--accent); color: var(--accent); }
+.btn-icon.del:hover { border-color: var(--accent2); color: var(--accent2); }
+
+.add-set-form {
+  background: var(--surface2);
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.inline-form-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: flex-end;
+}
+
+.inline-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-width: 80px;
+}
+
+.form-input-sm {
+  background: var(--surface3);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 7px 10px;
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.15s;
+  width: 100%;
+}
+.form-input-sm:focus { border-color: var(--accent); }
+
+.rir-btns {
+  display: flex;
+  gap: 4px;
+}
+.rir-btn {
+  flex: 1;
+  padding: 7px 0;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--surface3);
+  color: var(--text-dim);
+  font-family: var(--mono);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: center;
+}
+.rir-btn:hover { border-color: var(--accent); color: var(--text); }
+.rir-btn.active { background: var(--accent); border-color: var(--accent); color: white; }
+
+.session-summary {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 14px;
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+.summary-item { display: flex; flex-direction: column; gap: 2px; }
+.summary-label { font-size: 10px; color: var(--text-dim); font-family: var(--mono); letter-spacing: 0.5px; text-transform: uppercase; }
+.summary-val { font-size: 16px; font-weight: 700; font-family: var(--mono); }
+.summary-val.accent { color: var(--accent); }
+
+/* ── METRICS PAGE ── */
+#page-metrics {
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+.metrics-container {
+  max-width: 820px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 24px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 10px;
+}
+
+.metric-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+.metric-card .metric-name {
+  font-size: 11px;
+  color: var(--text-dim);
+  font-family: var(--mono);
+  margin-bottom: 6px;
+}
+.metric-card .metric-val {
+  font-size: 22px;
+  font-weight: 700;
+  font-family: var(--mono);
+}
+.metric-card .metric-unit {
+  font-size: 13px;
+  color: var(--text-dim);
+  font-weight: 400;
+}
+
+.metrics-log-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  font-family: var(--mono);
+}
+.metrics-log-table th {
+  text-align: left;
+  color: var(--text-dim);
+  font-weight: 500;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+  font-size: 10px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+.metrics-log-table td {
+  padding: 9px 10px;
+  border-bottom: 1px solid var(--surface2);
+}
+.metrics-log-table tr:hover td { background: var(--surface2); }
+
+/* ── MODAL ── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  backdrop-filter: blur(4px);
+}
+.modal-overlay.hidden { display: none; }
+
+.modal {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 24px;
+  width: 90%;
+  max-width: 480px;
+  max-height: 85vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.modal-title {
+  font-size: 16px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.modal-close {
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-dim);
+  cursor: pointer;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.modal-close:hover { color: var(--text); background: var(--surface2); }
+
+.modal-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  padding-top: 4px;
+  border-top: 1px solid var(--border);
+}
+
+/* ── RADIO BUTTONS ── */
+.radio-group {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.radio-option {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-dim);
+  padding: 7px 14px;
+  border-radius: 7px;
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  transition: all 0.15s;
+  user-select: none;
+}
+.radio-option:hover { border-color: var(--accent); color: var(--text); }
+.radio-option input[type="radio"] { display: none; }
+.radio-option.checked {
+  border-color: var(--accent);
+  background: rgba(108,99,255,0.15);
+  color: var(--text);
+}
+.radio-dot {
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  border: 2px solid var(--text-dimmer);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  transition: border-color 0.15s;
+}
+.radio-option.checked .radio-dot {
+  border-color: var(--accent);
+}
+.radio-option.checked .radio-dot::after {
+  content: '';
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: var(--accent);
+  display: block;
+}
+
+/* inline field+unit layout */
+.field-with-unit {
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
+}
+.field-with-unit .form-input { flex: 1; }
+.field-with-unit .form-input-sm { width: 70px; flex-shrink: 0; }
+
+
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--surface3); border-radius: 3px; }
+
+/* tabs in detail */
+.detail-tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.detail-tab {
+  padding: 8px 18px;
+  border: none;
+  background: transparent;
+  color: var(--text-dim);
+  font-family: var(--sans);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.15s;
+}
+.detail-tab.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+.detail-tab:hover:not(.active) { color: var(--text); }
+
+.tab-pane { display: none; }
+.tab-pane.active { display: block; }
+
+/* threshold bars */
+.threshold-bar-wrap {
+  margin-top: 8px;
+}
+.threshold-track {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--surface3);
+  position: relative;
+  overflow: hidden;
+}
+.threshold-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.5s ease;
+}
+.threshold-labels {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 4px;
+  font-size: 9px;
+  font-family: var(--mono);
+  color: var(--text-dimmer);
+}
+
+.muscle-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 4px;
+}
+.muscle-stat {
+  background: var(--surface2);
+  border-radius: 7px;
+  padding: 8px 10px;
+}
+.muscle-stat-label { font-size: 9px; color: var(--text-dim); font-family: var(--mono); text-transform: uppercase; letter-spacing: 0.5px; }
+.muscle-stat-val { font-size: 15px; font-weight: 700; font-family: var(--mono); margin-top: 2px; }
+
+.no-data-note {
+  text-align: center;
+  color: var(--text-dimmer);
+  font-size: 12px;
+  padding: 20px;
+  font-family: var(--mono);
+}
+
+/* Muscle overview stats */
+.overview-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 8px;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.overview-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+.overview-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+}
+.overview-count {
+  font-size: 20px;
+  font-weight: 700;
+  font-family: var(--mono);
+}
+.overview-label {
+  font-size: 9px;
+  color: var(--text-dim);
+  font-family: var(--mono);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  text-align: center;
+}
+
+/* tooltip */
+.svg-tooltip {
+  position: fixed;
+  background: var(--surface3);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 5px 9px;
+  font-size: 11px;
+  font-family: var(--mono);
+  pointer-events: none;
+  z-index: 50;
+  white-space: nowrap;
+  display: none;
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">My Muscle <span>Map</span></div>
+  <div class="header-tabs">
+    <button class="header-tab active" onclick="showPage('map')">Body Map</button>
+    <button class="header-tab" onclick="showPage('log')">Log Session</button>
+    <button class="header-tab" onclick="showPage('metrics')">Body Metrics</button>
+  </div>
+  <div class="header-right">
+    <button class="btn btn-ghost btn-sm" onclick="openSettingsModal()">⚙ Settings</button>
+  </div>
+</header>
+
+<div class="main">
+
+  <!-- ═══ BODY MAP PAGE ═══ -->
+  <div id="page-map" class="page active">
+
+    <div class="body-panel">
+      <div class="body-panel-header">
+        <h3>My Muscle Map</h3>
+        <div class="legend">
+          <div class="legend-item"><div class="legend-dot" style="background:var(--c-none)"></div>No data</div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--c-beginner)"></div>Beginner</div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--c-novice)"></div>Novice</div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--c-intermediate)"></div>Intermediate</div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--c-advanced)"></div>Advanced</div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--c-elite)"></div>Elite</div>
+        </div>
+      </div>
+
+      <!-- Overview counts -->
+      <div class="overview-grid" id="overview-grid"></div>
+
+      <div class="body-svgs">
+        <div class="svg-wrap">
+          <div class="svg-label">Front</div>
+          <svg id="svg-front" viewBox="0 0 100 230" xmlns="http://www.w3.org/2000/svg"></svg>
+        </div>
+        <div class="svg-wrap">
+          <div class="svg-label">Back</div>
+          <svg id="svg-back" viewBox="0 0 100 230" xmlns="http://www.w3.org/2000/svg"></svg>
+        </div>
+      </div>
+    </div>
+
+    <div class="detail-panel" id="detail-panel">
+      <div class="detail-empty" id="detail-empty">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/>
+        </svg>
+        <p>Select a muscle to view details</p>
+      </div>
+      <div class="detail-content" id="detail-content" style="display:none">
+        <div class="detail-header">
+          <div>
+            <div class="detail-muscle-name" id="detail-name">—</div>
+            <div class="detail-muscle-group" id="detail-group">—</div>
+          </div>
+          <div class="detail-score-badge">
+            <div class="score-level" id="detail-level-badge">—</div>
+            <div class="score-1rm" id="detail-1rm">No data yet</div>
+          </div>
+        </div>
+
+        <div class="detail-tabs">
+          <button class="detail-tab active" onclick="switchDetailTab('exercises',this)">Exercises</button>
+          <button class="detail-tab" onclick="switchDetailTab('history',this)">History</button>
+          <button class="detail-tab" onclick="switchDetailTab('sessions',this)">All Sets</button>
+        </div>
+
+        <div class="detail-body">
+          <div class="tab-pane active" id="tab-exercises">
+            <div id="exercise-cards-container"></div>
+          </div>
+          <div class="tab-pane" id="tab-history">
+            <div class="section-title">1RM Over Time</div>
+            <div class="chart-container">
+              <div class="chart-area">
+                <svg id="history-chart-svg"></svg>
+              </div>
+            </div>
+          </div>
+          <div class="tab-pane" id="tab-sessions">
+            <div class="section-title">All Logged Sets</div>
+            <div id="sessions-table-container"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ LOG SESSION PAGE ═══ -->
+  <div id="page-log" class="page">
+    <div class="log-container">
+      <div class="log-header">
+        <div class="log-title">Log Session</div>
+      </div>
+
+      <!-- Exercise selection -->
+      <div class="card">
+        <div class="card-title">Exercise Selection</div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Pick by Muscle Group</label>
+            <select class="form-select" id="log-muscle-select" onchange="onLogMuscleChange()">
+              <option value="">— Select muscle —</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Pick by Exercise</label>
+            <select class="form-select" id="log-exercise-select" onchange="onLogExerciseChange()">
+              <option value="">— Select exercise —</option>
+            </select>
+          </div>
+        </div>
+        <div style="margin-top:10px; font-size:12px; color:var(--text-dim); font-family:var(--mono)" id="log-muscle-inferred"></div>
+      </div>
+
+      <!-- Date -->
+      <div class="card">
+        <div class="card-title">Session Date</div>
+        <div class="form-row">
+          <div class="form-group" style="max-width:200px">
+            <label class="form-label">Date</label>
+            <input type="date" class="form-input" id="log-date">
+          </div>
+        </div>
+      </div>
+
+      <!-- Sets -->
+      <div class="card" id="sets-card">
+        <div class="card-title">
+          <span>Sets</span>
+          <span id="session-best-1rm" style="font-size:11px; color:var(--accent); font-family:var(--mono)"></span>
+        </div>
+        <div class="sets-list" id="sets-list"></div>
+        <!-- Add set form -->
+        <div class="add-set-form" id="add-set-form">
+          <div style="font-size:11px; font-weight:700; letter-spacing:0.8px; text-transform:uppercase; color:var(--text-dim)">Add Set</div>
+          <div class="inline-form-row">
+            <div class="inline-form-group">
+              <div class="form-label" style="font-size:10px">Type</div>
+              <select class="form-input-sm" id="set-type">
+                <option value="warmup">Warm-up</option>
+                <option value="target" selected>Target</option>
+              </select>
+            </div>
+            <div class="inline-form-group">
+              <div class="form-label" style="font-size:10px">Weight (kg)</div>
+              <input type="number" class="form-input-sm" id="set-weight" placeholder="12" min="0" step="0.5">
+            </div>
+            <div class="inline-form-group">
+              <div class="form-label" style="font-size:10px">Reps</div>
+              <input type="number" class="form-input-sm" id="set-reps" placeholder="10" min="1" max="100">
+            </div>
+          </div>
+          <div>
+            <div class="form-label" style="font-size:10px; margin-bottom:5px">RIR (Reps In Reserve)</div>
+            <div class="rir-btns" id="rir-btns">
+              <button class="rir-btn" onclick="selectRIR(0)">0</button>
+              <button class="rir-btn" onclick="selectRIR(1)">1</button>
+              <button class="rir-btn" onclick="selectRIR(2)">2</button>
+              <button class="rir-btn" onclick="selectRIR(3)">3</button>
+              <button class="rir-btn" onclick="selectRIR(4)">4+</button>
+            </div>
+          </div>
+          <div style="display:flex; gap:8px; align-items:center">
+            <button class="btn btn-primary btn-sm" onclick="saveSet()">Save Set</button>
+            <span id="set-preview-1rm" style="font-size:11px; color:var(--text-dim); font-family:var(--mono)"></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- End session -->
+      <div style="display:flex; gap:10px; align-items:center">
+        <button class="btn btn-success" onclick="endSession()" id="end-session-btn">End Session & Update Scores</button>
+        <button class="btn btn-ghost btn-sm" onclick="clearSession()">Clear All</button>
+        <span id="end-session-note" style="font-size:11px; color:var(--text-dim); font-family:var(--mono)"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ METRICS PAGE ═══ -->
+  <div id="page-metrics" class="page">
+    <div class="metrics-container">
+      <div style="display:flex; align-items:center; justify-content:space-between">
+        <div class="log-title">Body Metrics</div>
+        <button class="btn btn-primary btn-sm" onclick="openMetricsModal()">+ Log Today</button>
+      </div>
+
+      <!-- Profile snapshot from settings -->
+      <div>
+        <div class="section-title" style="display:flex;align-items:center;justify-content:space-between">
+          Profile
+          <button class="btn btn-ghost btn-sm" onclick="openSettingsModal()" style="font-size:10px">Edit Profile ⚙</button>
+        </div>
+        <div class="metrics-grid" id="metrics-profile-grid"></div>
+      </div>
+
+      <!-- Latest scale snapshot -->
+      <div>
+        <div class="section-title">Latest Scale Snapshot</div>
+        <div class="metrics-grid" id="metrics-latest-grid"></div>
+      </div>
+
+      <!-- History table -->
+      <div class="card">
+        <div class="card-title">All Scale Entries</div>
+        <div id="metrics-history-container" style="overflow-x:auto">
+          <div class="no-data-note">No metrics logged yet.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Tooltip -->
+<div class="svg-tooltip" id="svg-tooltip"></div>
+
+<!-- Profile Gate Overlay — shown on first launch until profile complete -->
+<div class="modal-overlay hidden" id="profile-gate-overlay" style="z-index:200">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-title" style="font-size:17px; font-weight:800">
+      Welcome to My Muscle Map
+    </div>
+    <div style="font-size:11px; color:var(--text-dim); font-family:var(--mono); margin-top:-6px">
+      Quick setup — calibrates strength levels to your demographics.
+    </div>
+
+    <!-- Name -->
+    <div class="form-group">
+      <label class="form-label">Name</label>
+      <input type="text" class="form-input" id="pg-name" placeholder="Your name">
+    </div>
+
+    <!-- Sex — radio -->
+    <div class="form-group">
+      <label class="form-label">Sex</label>
+      <div class="radio-group" id="pg-sex-group">
+        <label class="radio-option" onclick="pickRadio('pg-sex-group','male')">
+          <input type="radio" name="pg-sex" value="male">
+          <span class="radio-dot"></span> Male
+        </label>
+        <label class="radio-option" onclick="pickRadio('pg-sex-group','female')">
+          <input type="radio" name="pg-sex" value="female">
+          <span class="radio-dot"></span> Female
+        </label>
+      </div>
+    </div>
+
+    <!-- Age — both fields side by side, either can be filled -->
+    <div class="form-group">
+      <label class="form-label">Age</label>
+      <div class="form-row" style="gap:10px">
+        <div class="form-group" style="flex:1.4">
+          <div class="form-label" style="font-size:10px; margin-bottom:4px">Date of Birth</div>
+          <input type="date" class="form-input" id="pg-dob" onchange="pgDobChanged()">
+        </div>
+        <div style="display:flex;align-items:center;padding-bottom:2px;color:var(--text-dimmer);font-size:11px;font-family:var(--mono);align-self:flex-end;margin-bottom:9px">or</div>
+        <div class="form-group" style="flex:0.8">
+          <div class="form-label" style="font-size:10px; margin-bottom:4px">Age (yrs)</div>
+          <input type="number" class="form-input" id="pg-age" min="10" max="110" placeholder="32" onchange="pgAgeChanged()">
+        </div>
+      </div>
+    </div>
+
+    <!-- Weight — field + kg/lbs radio inline -->
+    <div class="form-group">
+      <label class="form-label">Weight</label>
+      <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap">
+        <input type="number" class="form-input" id="pg-weight" step="0.1" placeholder="82.9" style="max-width:130px">
+        <div class="radio-group" id="pg-weight-unit-group">
+          <label class="radio-option checked" onclick="pickRadio('pg-weight-unit-group','kg')">
+            <input type="radio" name="pg-wunit" value="kg" checked>
+            <span class="radio-dot"></span> kg
+          </label>
+          <label class="radio-option" onclick="pickRadio('pg-weight-unit-group','lbs')">
+            <input type="radio" name="pg-wunit" value="lbs">
+            <span class="radio-dot"></span> lbs
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <!-- Height — field + cm/ft·in radio inline -->
+    <div class="form-group">
+      <label class="form-label">Height</label>
+      <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap">
+        <div id="pg-height-cm-wrap" style="display:flex;gap:6px;align-items:center">
+          <input type="number" class="form-input" id="pg-height-cm" min="100" max="250" step="1" placeholder="178" style="max-width:90px">
+          <span style="font-size:11px;color:var(--text-dim);font-family:var(--mono)">cm</span>
+        </div>
+        <div id="pg-height-ftin-wrap" style="display:none;gap:6px;align-items:center">
+          <input type="number" class="form-input" id="pg-height-ft" min="3" max="8" step="1" placeholder="5" style="max-width:60px">
+          <span style="font-size:11px;color:var(--text-dim);font-family:var(--mono)">ft</span>
+          <input type="number" class="form-input" id="pg-height-in" min="0" max="11.5" step="0.5" placeholder="10" style="max-width:60px">
+          <span style="font-size:11px;color:var(--text-dim);font-family:var(--mono)">in</span>
+        </div>
+        <div class="radio-group" id="pg-height-unit-group">
+          <label class="radio-option checked" onclick="pickRadio('pg-height-unit-group','cm');pgToggleHeight()">
+            <input type="radio" name="pg-hunit" value="cm" checked>
+            <span class="radio-dot"></span> cm
+          </label>
+          <label class="radio-option" onclick="pickRadio('pg-height-unit-group','ftin');pgToggleHeight()">
+            <input type="radio" name="pg-hunit" value="ftin">
+            <span class="radio-dot"></span> ft / in
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <div style="font-size:10px; color:var(--text-dimmer); font-family:var(--mono); line-height:1.7">
+      Sex &amp; age calibrate strength thresholds to your demographic. Weight is the 1RM ratio denominator. All editable anytime in Settings.
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn-primary" onclick="saveProfileGate()">Start Training →</button>
+    </div>
+  </div>
+</div>
+
+<!-- Settings Modal — full profile edit -->
+<div class="modal-overlay hidden" id="settings-modal">
+  <div class="modal">
+    <div class="modal-title">
+      Profile &amp; Settings
+      <button class="modal-close" onclick="closeModal('settings-modal')">✕</button>
+    </div>
+
+    <!-- Name -->
+    <div class="form-group">
+      <label class="form-label">Name</label>
+      <input type="text" class="form-input" id="sp-name" placeholder="Your name">
+    </div>
+
+    <!-- Sex — radio -->
+    <div class="form-group">
+      <label class="form-label">Sex</label>
+      <div class="radio-group" id="sp-sex-group">
+        <label class="radio-option" onclick="pickRadio('sp-sex-group','male')">
+          <input type="radio" name="sp-sex" value="male">
+          <span class="radio-dot"></span> Male
+        </label>
+        <label class="radio-option" onclick="pickRadio('sp-sex-group','female')">
+          <input type="radio" name="sp-sex" value="female">
+          <span class="radio-dot"></span> Female
+        </label>
+      </div>
+    </div>
+
+    <!-- Age — both fields side by side -->
+    <div class="form-group">
+      <label class="form-label">Age</label>
+      <div class="form-row" style="gap:10px">
+        <div class="form-group" style="flex:1.4">
+          <div class="form-label" style="font-size:10px; margin-bottom:4px">Date of Birth</div>
+          <input type="date" class="form-input" id="sp-dob" onchange="spDobChanged()">
+        </div>
+        <div style="display:flex;align-items:flex-end;margin-bottom:9px;color:var(--text-dimmer);font-size:11px;font-family:var(--mono)">or</div>
+        <div class="form-group" style="flex:0.8">
+          <div class="form-label" style="font-size:10px; margin-bottom:4px">Age (yrs)</div>
+          <input type="number" class="form-input" id="sp-age" min="10" max="110" placeholder="32" onchange="spAgeChanged()">
+        </div>
+      </div>
+    </div>
+
+    <!-- Weight -->
+    <div class="form-group">
+      <label class="form-label">Weight</label>
+      <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap">
+        <input type="number" class="form-input" id="sp-weight" step="0.1" placeholder="82.9" style="max-width:130px">
+        <div class="radio-group" id="sp-weight-unit-group">
+          <label class="radio-option checked" onclick="pickRadio('sp-weight-unit-group','kg')">
+            <input type="radio" name="sp-wunit" value="kg" checked>
+            <span class="radio-dot"></span> kg
+          </label>
+          <label class="radio-option" onclick="pickRadio('sp-weight-unit-group','lbs')">
+            <input type="radio" name="sp-wunit" value="lbs">
+            <span class="radio-dot"></span> lbs
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <!-- Height -->
+    <div class="form-group">
+      <label class="form-label">Height</label>
+      <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap">
+        <div id="sp-height-cm-wrap" style="display:flex;gap:6px;align-items:center">
+          <input type="number" class="form-input" id="sp-height-cm" min="100" max="250" step="1" placeholder="178" style="max-width:90px">
+          <span style="font-size:11px;color:var(--text-dim);font-family:var(--mono)">cm</span>
+        </div>
+        <div id="sp-height-ftin-wrap" style="display:none;gap:6px;align-items:center">
+          <input type="number" class="form-input" id="sp-height-ft" min="3" max="8" step="1" placeholder="5" style="max-width:60px">
+          <span style="font-size:11px;color:var(--text-dim);font-family:var(--mono)">ft</span>
+          <input type="number" class="form-input" id="sp-height-in" min="0" max="11.5" step="0.5" placeholder="10" style="max-width:60px">
+          <span style="font-size:11px;color:var(--text-dim);font-family:var(--mono)">in</span>
+        </div>
+        <div class="radio-group" id="sp-height-unit-group">
+          <label class="radio-option checked" onclick="pickRadio('sp-height-unit-group','cm');spToggleHeight()">
+            <input type="radio" name="sp-hunit" value="cm" checked>
+            <span class="radio-dot"></span> cm
+          </label>
+          <label class="radio-option" onclick="pickRadio('sp-height-unit-group','ftin');spToggleHeight()">
+            <input type="radio" name="sp-hunit" value="ftin">
+            <span class="radio-dot"></span> ft / in
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <!-- Last-updated timestamps -->
+    <div id="sp-timestamps"></div>
+
+    <div style="font-size:10px; color:var(--text-dimmer); font-family:var(--mono); line-height:1.7; margin-top:4px">
+      Female threshold multiplier: 0.65×. Age brackets: peak 25–34, declining thereafter.
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('settings-modal')">Cancel</button>
+      <button class="btn btn-primary btn-sm" onclick="saveSettings()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Metrics Modal -->
+<div class="modal-overlay hidden" id="metrics-modal">
+  <div class="modal">
+    <div class="modal-title">
+      Log Body Metrics
+      <button class="modal-close" onclick="closeModal('metrics-modal')">✕</button>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Date</label>
+      <input type="date" class="form-input" id="metrics-date">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Weight (kg)</label>
+        <input type="number" class="form-input" id="m-weight" placeholder="82.9" step="0.1">
+      </div>
+      <div class="form-group">
+        <label class="form-label">BMI</label>
+        <input type="number" class="form-input" id="m-bmi" placeholder="25" step="0.1">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Body Fat %</label>
+        <input type="number" class="form-input" id="m-bodyfat" placeholder="15.6" step="0.1">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Subdermal Fat %</label>
+        <input type="number" class="form-input" id="m-subdermal" placeholder="13.4" step="0.1">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Visceral Fat</label>
+        <input type="number" class="form-input" id="m-visceral" placeholder="7" step="0.1">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Body Water %</label>
+        <input type="number" class="form-input" id="m-water" placeholder="60.9" step="0.1">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Skeletal Muscle %</label>
+        <input type="number" class="form-input" id="m-skeletal" placeholder="54.5" step="0.1">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Bone Mass (kg)</label>
+        <input type="number" class="form-input" id="m-bone" placeholder="3.5" step="0.1">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Protein %</label>
+        <input type="number" class="form-input" id="m-protein" placeholder="19.2" step="0.1">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Muscle Mass (kg)</label>
+        <input type="number" class="form-input" id="m-muscle" placeholder="66.4" step="0.1">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Fat Free BW (kg)</label>
+        <input type="number" class="form-input" id="m-ffbw" placeholder="69.9" step="0.1">
+      </div>
+      <div class="form-group">
+        <label class="form-label">BMR (kcal)</label>
+        <input type="number" class="form-input" id="m-bmr" placeholder="1880" step="1">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Metabolic Age (years)</label>
+      <input type="number" class="form-input" id="m-metage" placeholder="43" step="1">
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('metrics-modal')">Cancel</button>
+      <button class="btn btn-primary btn-sm" onclick="saveMetrics()">Save Entry</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Set Modal -->
+<div class="modal-overlay hidden" id="edit-set-modal">
+  <div class="modal">
+    <div class="modal-title">
+      Edit Set
+      <button class="modal-close" onclick="closeModal('edit-set-modal')">✕</button>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Type</label>
+        <select class="form-select" id="edit-set-type">
+          <option value="warmup">Warm-up</option>
+          <option value="target">Target</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Weight (kg)</label>
+        <input type="number" class="form-input" id="edit-set-weight" step="0.5">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Reps</label>
+        <input type="number" class="form-input" id="edit-set-reps">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">RIR</label>
+      <div class="rir-btns" id="edit-rir-btns">
+        <button class="rir-btn" onclick="selectEditRIR(0)">0</button>
+        <button class="rir-btn" onclick="selectEditRIR(1)">1</button>
+        <button class="rir-btn" onclick="selectEditRIR(2)">2</button>
+        <button class="rir-btn" onclick="selectEditRIR(3)">3</button>
+        <button class="rir-btn" onclick="selectEditRIR(4)">4+</button>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('edit-set-modal')">Cancel</button>
+      <button class="btn btn-primary btn-sm" onclick="saveEditSet()">Update Set</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+// DATA
+// ═══════════════════════════════════════════════════════
+
+const MUSCLES = [
+  // Front upper
+  { id:'upper-chest',    name:'Upper Chest',       group:'Upper Body · Front', view:'front', thresholds:[0.3,0.5,0.75,1.0,1.5] },
+  { id:'lower-chest',    name:'Lower Chest',       group:'Upper Body · Front', view:'front', thresholds:[0.3,0.5,0.75,1.0,1.5] },
+  { id:'front-deltoid',  name:'Front Deltoid',     group:'Upper Body · Front', view:'front', thresholds:[0.15,0.25,0.4,0.55,0.8] },
+  { id:'side-deltoid',   name:'Side Deltoid',      group:'Upper Body · Front', view:'front', thresholds:[0.1,0.2,0.35,0.5,0.75] },
+  { id:'biceps',         name:'Biceps',            group:'Upper Body · Front', view:'front', thresholds:[0.2,0.35,0.5,0.7,1.0] },
+  { id:'brachialis',     name:'Brachialis',        group:'Upper Body · Front', view:'front', thresholds:[0.15,0.3,0.45,0.6,0.9] },
+  { id:'forearm-flex',   name:'Forearm Flexors',   group:'Upper Body · Front', view:'front', thresholds:[0.15,0.25,0.4,0.55,0.8] },
+  // Front lower
+  { id:'upper-abs',      name:'Upper Abs',         group:'Core',               view:'front', thresholds:[0.1,0.2,0.35,0.5,0.8] },
+  { id:'lower-abs',      name:'Lower Abs',         group:'Core',               view:'front', thresholds:[0.1,0.2,0.35,0.5,0.8] },
+  { id:'obliques',       name:'Obliques',          group:'Core',               view:'front', thresholds:[0.1,0.2,0.35,0.5,0.75] },
+  { id:'quads',          name:'Quads',             group:'Lower Body · Front', view:'front', thresholds:[0.5,0.9,1.3,1.75,2.5] },
+  { id:'hip-flexors',    name:'Hip Flexors',       group:'Lower Body · Front', view:'front', thresholds:[0.1,0.2,0.35,0.5,0.75] },
+  { id:'tibialis',       name:'Tibialis Anterior', group:'Lower Body · Front', view:'front', thresholds:[0.1,0.2,0.3,0.45,0.65] },
+  // Back upper
+  { id:'upper-traps',    name:'Upper Traps',       group:'Upper Body · Back',  view:'back',  thresholds:[0.3,0.5,0.75,1.0,1.5] },
+  { id:'lower-traps',    name:'Lower Traps',       group:'Upper Body · Back',  view:'back',  thresholds:[0.2,0.4,0.6,0.85,1.2] },
+  { id:'rear-deltoid',   name:'Rear Deltoid',      group:'Upper Body · Back',  view:'back',  thresholds:[0.1,0.2,0.35,0.5,0.75] },
+  { id:'lats',           name:'Lats',              group:'Upper Body · Back',  view:'back',  thresholds:[0.4,0.7,1.0,1.4,2.0] },
+  { id:'rhomboids',      name:'Rhomboids',         group:'Upper Body · Back',  view:'back',  thresholds:[0.2,0.4,0.6,0.85,1.2] },
+  { id:'triceps',        name:'Triceps',           group:'Upper Body · Back',  view:'back',  thresholds:[0.25,0.45,0.65,0.9,1.3] },
+  { id:'forearm-ext',    name:'Forearm Extensors', group:'Upper Body · Back',  view:'back',  thresholds:[0.12,0.22,0.35,0.5,0.75] },
+  // Back lower
+  { id:'erector',        name:'Erector Spinae',    group:'Core',               view:'back',  thresholds:[0.5,0.9,1.3,1.75,2.5] },
+  { id:'glutes',         name:'Glutes',            group:'Lower Body · Back',  view:'back',  thresholds:[0.5,0.9,1.3,1.75,2.5] },
+  { id:'hamstrings',     name:'Hamstrings',        group:'Lower Body · Back',  view:'back',  thresholds:[0.4,0.7,1.0,1.4,2.0] },
+  { id:'calves',         name:'Calves',            group:'Lower Body · Back',  view:'back',  thresholds:[0.6,1.0,1.4,1.8,2.5] },
+];
+
+const EXERCISES = [
+  // Chest
+  { id:'barbell-bench',    name:'Barbell Bench Press',    muscles:['upper-chest','lower-chest'],           primaryMuscle:'upper-chest' },
+  { id:'incline-bench',    name:'Incline Bench Press',    muscles:['upper-chest'],                         primaryMuscle:'upper-chest' },
+  { id:'decline-bench',    name:'Decline Bench Press',    muscles:['lower-chest'],                         primaryMuscle:'lower-chest' },
+  { id:'db-fly',           name:'Dumbbell Fly',           muscles:['upper-chest','lower-chest'],           primaryMuscle:'upper-chest' },
+  { id:'cable-crossover',  name:'Cable Crossover',        muscles:['lower-chest','upper-chest'],           primaryMuscle:'lower-chest' },
+  { id:'pushup',           name:'Push Up',                muscles:['upper-chest','lower-chest','triceps'], primaryMuscle:'upper-chest' },
+  // Shoulders
+  { id:'ohp',              name:'Overhead Press',         muscles:['front-deltoid','side-deltoid'],        primaryMuscle:'front-deltoid' },
+  { id:'lateral-raise',    name:'Lateral Raise',          muscles:['side-deltoid'],                        primaryMuscle:'side-deltoid' },
+  { id:'front-raise',      name:'Front Raise',            muscles:['front-deltoid'],                       primaryMuscle:'front-deltoid' },
+  { id:'face-pull',        name:'Face Pull',              muscles:['rear-deltoid','rhomboids'],            primaryMuscle:'rear-deltoid' },
+  { id:'rear-fly',         name:'Rear Delt Fly',          muscles:['rear-deltoid'],                        primaryMuscle:'rear-deltoid' },
+  { id:'arnold-press',     name:'Arnold Press',           muscles:['front-deltoid','side-deltoid'],        primaryMuscle:'front-deltoid' },
+  // Biceps / Arms
+  { id:'barbell-curl',     name:'Barbell Curl',           muscles:['biceps','brachialis'],                 primaryMuscle:'biceps' },
+  { id:'db-curl',          name:'Dumbbell Curl',          muscles:['biceps'],                              primaryMuscle:'biceps' },
+  { id:'hammer-curl',      name:'Hammer Curl',            muscles:['brachialis','biceps'],                 primaryMuscle:'brachialis' },
+  { id:'preacher-curl',    name:'Preacher Curl',          muscles:['biceps'],                              primaryMuscle:'biceps' },
+  { id:'incline-db-curl',  name:'Incline DB Curl',        muscles:['biceps'],                              primaryMuscle:'biceps' },
+  // Triceps
+  { id:'tricep-pushdown',  name:'Tricep Pushdown',        muscles:['triceps'],                             primaryMuscle:'triceps' },
+  { id:'skullcrusher',     name:'Skull Crusher',          muscles:['triceps'],                             primaryMuscle:'triceps' },
+  { id:'close-grip-bench', name:'Close Grip Bench',       muscles:['triceps','upper-chest'],               primaryMuscle:'triceps' },
+  { id:'overhead-tricep',  name:'Overhead Tricep Ext.',   muscles:['triceps'],                             primaryMuscle:'triceps' },
+  // Forearms
+  { id:'wrist-curl',       name:'Wrist Curl',             muscles:['forearm-flex'],                        primaryMuscle:'forearm-flex' },
+  { id:'reverse-curl',     name:'Reverse Curl',           muscles:['forearm-ext','brachialis'],            primaryMuscle:'forearm-ext' },
+  // Back
+  { id:'pullup',           name:'Pull Up',                muscles:['lats','biceps','rhomboids'],           primaryMuscle:'lats' },
+  { id:'lat-pulldown',     name:'Lat Pulldown',           muscles:['lats','rhomboids'],                    primaryMuscle:'lats' },
+  { id:'bent-row',         name:'Bent Over Row',          muscles:['lats','rhomboids','lower-traps'],      primaryMuscle:'lats' },
+  { id:'seated-row',       name:'Seated Cable Row',       muscles:['rhomboids','lats','lower-traps'],      primaryMuscle:'rhomboids' },
+  { id:'deadlift',         name:'Deadlift',               muscles:['erector','hamstrings','glutes','lats'],primaryMuscle:'erector' },
+  { id:'shrug',            name:'Shrug',                  muscles:['upper-traps'],                         primaryMuscle:'upper-traps' },
+  { id:'tbar-row',         name:'T-Bar Row',              muscles:['lats','rhomboids','lower-traps'],      primaryMuscle:'lats' },
+  // Core
+  { id:'crunch',           name:'Crunch',                 muscles:['upper-abs'],                           primaryMuscle:'upper-abs' },
+  { id:'leg-raise',        name:'Leg Raise',              muscles:['lower-abs','hip-flexors'],             primaryMuscle:'lower-abs' },
+  { id:'plank',            name:'Plank',                  muscles:['upper-abs','lower-abs'],               primaryMuscle:'upper-abs' },
+  { id:'cable-crunch',     name:'Cable Crunch',           muscles:['upper-abs','lower-abs'],               primaryMuscle:'upper-abs' },
+  { id:'russian-twist',    name:'Russian Twist',          muscles:['obliques'],                            primaryMuscle:'obliques' },
+  { id:'side-bend',        name:'Side Bend',              muscles:['obliques'],                            primaryMuscle:'obliques' },
+  { id:'back-extension',   name:'Back Extension',         muscles:['erector','glutes'],                    primaryMuscle:'erector' },
+  { id:'good-morning',     name:'Good Morning',           muscles:['erector','hamstrings'],                primaryMuscle:'erector' },
+  // Legs
+  { id:'squat',            name:'Barbell Squat',          muscles:['quads','glutes','hamstrings'],         primaryMuscle:'quads' },
+  { id:'leg-press',        name:'Leg Press',              muscles:['quads','glutes'],                      primaryMuscle:'quads' },
+  { id:'leg-ext',          name:'Leg Extension',          muscles:['quads'],                               primaryMuscle:'quads' },
+  { id:'lunge',            name:'Lunge',                  muscles:['quads','glutes','hamstrings'],         primaryMuscle:'quads' },
+  { id:'leg-curl',         name:'Leg Curl',               muscles:['hamstrings'],                          primaryMuscle:'hamstrings' },
+  { id:'rdl',              name:'Romanian Deadlift',      muscles:['hamstrings','glutes','erector'],       primaryMuscle:'hamstrings' },
+  { id:'hip-thrust',       name:'Hip Thrust',             muscles:['glutes','hamstrings'],                 primaryMuscle:'glutes' },
+  { id:'glute-kickback',   name:'Glute Kickback',         muscles:['glutes'],                              primaryMuscle:'glutes' },
+  { id:'calf-raise',       name:'Calf Raise',             muscles:['calves'],                              primaryMuscle:'calves' },
+  { id:'seated-calf',      name:'Seated Calf Raise',      muscles:['calves'],                              primaryMuscle:'calves' },
+  { id:'tibialis-raise',   name:'Tibialis Raise',         muscles:['tibialis'],                            primaryMuscle:'tibialis' },
+  { id:'hip-flexor-raise', name:'Hip Flexor Raise',       muscles:['hip-flexors'],                         primaryMuscle:'hip-flexors' },
+];
+
+const LEVEL_NAMES  = ['No Data','Beginner','Novice','Intermediate','Advanced','Elite'];
+const LEVEL_COLORS = ['var(--c-none)','var(--c-beginner)','var(--c-novice)','var(--c-intermediate)','var(--c-advanced)','var(--c-elite)'];
+
+// ═══════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════
+
+let state = {
+  settings: {
+    name: '',
+    sex: '',           // 'male' | 'female'
+    units: 'metric',   // 'metric' | 'imperial'
+    dobMode: 'dob',    // 'dob' | 'age'
+    dob: '',           // YYYY-MM-DD
+    ageManual: null,   // number, if dobMode='age'
+    ageUpdatedDate: '',// date ageManual was last set
+    heightCm: null,    // always stored in cm
+    weightKg: null,    // always stored in kg
+    _ts: {},           // { fieldName: 'YYYY-MM-DD' }
+  },
+  sessions: [],  // { id, date, exerciseId, ageAtSession, weightKgAtSession, sets:[...] }
+  metrics: [],   // body metrics entries
+};
+
+let selectedMuscle   = null;
+let selectedDetailTab = 'exercises';
+let selectedExercise  = null;
+let currentRIR        = null;
+let editRIR           = null;
+let editingSetIdx     = null;
+
+// ═══════════════════════════════════════════════════════
+// PERSISTENCE
+// ═══════════════════════════════════════════════════════
+
+function loadState() {
+  try {
+    const s = localStorage.getItem('mmm_v2');
+    if (s) {
+      const parsed = JSON.parse(s);
+      state = { ...state, ...parsed, settings: { ...state.settings, ...(parsed.settings || {}) } };
+    }
+    // Migrate old musclmap_v1 data if present and no v2 data yet
+    if (!localStorage.getItem('mmm_v2')) {
+      const old = localStorage.getItem('musclmap_v1');
+      if (old) {
+        const o = JSON.parse(old);
+        if (o.sessions) state.sessions = o.sessions;
+        if (o.metrics)  state.metrics  = o.metrics;
+        if (o.settings && o.settings.bodyweight) state.settings.weightKg = o.settings.bodyweight;
+        if (o.settings && o.settings.name)       state.settings.name     = o.settings.name;
+      }
+    }
+  } catch(e) {}
+}
+
+function saveState() {
+  localStorage.setItem('mmm_v2', JSON.stringify(state));
+}
+
+// ═══════════════════════════════════════════════════════
+// PROFILE HELPERS
+// ═══════════════════════════════════════════════════════
+
+
+// Get age on a given date string (YYYY-MM-DD), or today if not provided
+function getAgeOn(dateStr) {
+  const s = state.settings;
+  const refDate = dateStr ? new Date(dateStr) : new Date();
+
+  if (s.dobMode === 'dob' && s.dob) {
+    const dob = new Date(s.dob);
+    let age = refDate.getFullYear() - dob.getFullYear();
+    const m = refDate.getMonth() - dob.getMonth();
+    if (m < 0 || (m === 0 && refDate.getDate() < dob.getDate())) age--;
+    return age;
+  }
+
+  // Manual age: interpolate from when it was set
+  if (s.ageManual && s.ageUpdatedDate) {
+    const updDate  = new Date(s.ageUpdatedDate);
+    const yearsDiff = (refDate - updDate) / (1000 * 60 * 60 * 24 * 365.25);
+    return Math.round(s.ageManual + yearsDiff);
+  }
+  return s.ageManual || 30; // fallback
+}
+
+function getAgeBracketMultiplier(age) {
+  if (age < 25) return 0.95;
+  if (age < 35) return 1.00;
+  if (age < 45) return 0.95;
+  if (age < 55) return 0.87;
+  if (age < 65) return 0.78;
+  return 0.68;
+}
+
+function getGenderMultiplier() {
+  return state.settings.sex === 'female' ? 0.65 : 1.0;
+}
+
+// Get effective threshold multiplier for a given session date (or current)
+function getThresholdMultiplier(dateStr) {
+  const age = getAgeOn(dateStr);
+  return getGenderMultiplier() * getAgeBracketMultiplier(age);
+}
+
+// Get weight in kg as of a given date — looks back through metrics log
+function getWeightKgOn(dateStr) {
+  const target = dateStr || todayStr();
+  // Find most recent metric entry with weight on or before target date
+  const entries = (state.metrics || [])
+    .filter(m => m.weightKg && m.date <= target)
+    .sort((a, b) => b.date.localeCompare(a.date));
+  if (entries.length > 0) return entries[0].weightKg;
+  return state.settings.weightKg || 75;
+}
+
+// ═══════════════════════════════════════════════════════
+// UNIT CONVERSION HELPERS
+// ═══════════════════════════════════════════════════════
+
+const KG_TO_LBS  = 2.20462;
+const LBS_TO_KG  = 0.453592;
+const CM_TO_IN   = 0.393701;
+const IN_TO_CM   = 2.54;
+
+function displayWeight(kg) {
+  if (!kg) return '—';
+  if (state.settings.units === 'imperial') return (kg * KG_TO_LBS).toFixed(1) + ' lbs';
+  return kg.toFixed(1) + ' kg';
+}
+
+function displayHeight(cm) {
+  if (!cm) return '—';
+  if (state.settings.units === 'imperial') {
+    const totalIn = cm * CM_TO_IN;
+    const ft = Math.floor(totalIn / 12);
+    const inches = Math.round((totalIn % 12) * 2) / 2; // half-inch increments
+    return `${ft}' ${inches}"`;
+  }
+  return cm.toFixed(0) + ' cm';
+}
+
+function weightLabel() {
+  return state.settings.units === 'imperial' ? 'lbs' : 'kg';
+}
+
+function heightLabel() {
+  return state.settings.units === 'imperial' ? 'ft / in' : 'cm';
+}
+
+// Parse height input to cm
+function parseHeightToCm(ftStr, inStr, cmStr) {
+  if (state.settings.units === 'imperial') {
+    const ft  = parseFloat(ftStr) || 0;
+    const ins = parseFloat(inStr)  || 0;
+    return (ft * 12 + ins) * IN_TO_CM;
+  }
+  return parseFloat(cmStr) || 0;
+}
+
+// Parse weight input to kg
+function parseWeightToKg(val) {
+  const n = parseFloat(val);
+  if (!n) return 0;
+  return state.settings.units === 'imperial' ? n * LBS_TO_KG : n;
+}
+
+function getMuscleLevel(muscleId) {
+  // Uses best 1RM across all sessions, each session's weight/age snapshot
+  const muscle = MUSCLES.find(m => m.id === muscleId);
+  if (!muscle) return 0;
+  const best = getBest1RMRatio(muscleId); // returns best (1RM / adjusted_threshold_BW)
+  if (best === null) return 0;
+  const t = muscle.thresholds;
+  if (best < t[0]) return 1;
+  if (best < t[1]) return 2;
+  if (best < t[2]) return 3;
+  if (best < t[3]) return 4;
+  return 5;
+}
+
+function getLevelFromRatio(ratio, thresholds) {
+  const t = thresholds;
+  if (ratio < t[0]) return 1;
+  if (ratio < t[1]) return 2;
+  if (ratio < t[2]) return 3;
+  if (ratio < t[3]) return 4;
+  return 5;
+}
+
+// Returns the best (adj1rm / effectiveBW) ratio across all sessions for this muscle
+// effectiveBW = weightKg * genderMultiplier * ageBracketMultiplier
+// Higher ratio = closer to elite relative to your demographic
+function getBest1RMRatio(muscleId) {
+  // Only score from exercises where this muscle is the PRIMARY mover
+  const exIds = EXERCISES.filter(e => e.primaryMuscle === muscleId).map(e => e.id);
+  let best = null;
+  for (const sess of state.sessions) {
+    if (!exIds.includes(sess.exerciseId)) continue;
+    const weightKg    = sess.weightKgAtSession || getWeightKgOn(sess.date);
+    const mult        = sess.thresholdMult     || getThresholdMultiplier(sess.date);
+    const effectiveBW = weightKg * mult;
+    if (!effectiveBW) continue;
+    for (const set of sess.sets) {
+      if (set.type !== 'target') continue;
+      const ratio = set.adj1rm / effectiveBW;
+      if (best === null || ratio > best) best = ratio;
+    }
+  }
+  return best;
+}
+
+// Returns raw best adj1rm (kg) for display — also primary-only
+function getBest1RM(muscleId) {
+  const exIds = EXERCISES.filter(e => e.primaryMuscle === muscleId).map(e => e.id);
+  let best = null;
+  for (const sess of state.sessions) {
+    if (!exIds.includes(sess.exerciseId)) continue;
+    for (const set of sess.sets) {
+      if (set.type !== 'target') continue;
+      if (best === null || set.adj1rm > best) best = set.adj1rm;
+    }
+  }
+  return best;
+}
+
+function getExerciseBest1RM(exerciseId) {
+  let best = null;
+  let bestSet = null;
+  for (const sess of state.sessions) {
+    if (sess.exerciseId !== exerciseId) continue;
+    for (const set of sess.sets) {
+      if (set.type !== 'target') continue;
+      if (best === null || set.adj1rm > best) { best = set.adj1rm; bestSet = set; }
+    }
+  }
+  return { best, bestSet };
+}
+
+function getExerciseHistory(exerciseId) {
+  // Returns [{date, best1rm}] sorted by date
+  const byDate = {};
+  for (const sess of state.sessions) {
+    if (sess.exerciseId !== exerciseId) continue;
+    let b = null;
+    for (const set of sess.sets) {
+      if (set.type !== 'target') continue;
+      if (b === null || set.adj1rm > b) b = set.adj1rm;
+    }
+    if (b !== null) {
+      if (!byDate[sess.date] || byDate[sess.date] < b) byDate[sess.date] = b;
+    }
+  }
+  return Object.entries(byDate).sort((a,b)=>a[0].localeCompare(b[0])).map(([d,v])=>({date:d,best1rm:v}));
+}
+
+function getMuscleHistory(muscleId) {
+  const exIds = EXERCISES.filter(e => e.muscles.includes(muscleId)).map(e => e.id);
+  const byDate = {};
+  for (const sess of state.sessions) {
+    if (!exIds.includes(sess.exerciseId)) continue;
+    let b = null;
+    for (const set of sess.sets) {
+      if (set.type !== 'target') continue;
+      if (b === null || set.adj1rm > b) b = set.adj1rm;
+    }
+    if (b !== null) {
+      if (!byDate[sess.date] || byDate[sess.date] < b) byDate[sess.date] = b;
+    }
+  }
+  return Object.entries(byDate).sort((a,b)=>a[0].localeCompare(b[0])).map(([d,v])=>({date:d,best1rm:v}));
+}
+
+// ═══════════════════════════════════════════════════════
+// SVG BODY DEFINITIONS
+// ═══════════════════════════════════════════════════════
+
+// ═══════════════════════════════════════════════════════
+// ANATOMICAL SVG DATA — 24 distinct muscle regions
+// viewBox 0 0 100 220  — polygon points "x1 y1 x2 y2 …"
+// Library base: body-highlighter (MIT). Splits hand-crafted.
+// ═══════════════════════════════════════════════════════
+
+const ANTERIOR_POLYS = {
+  'head-front':    ["42.4489796 2.85714286 40 11.8367347 42.0408163 19.5918367 46.122449 23.2653061 49.7959184 25.3061224 54.6938776 22.4489796 57.5510204 19.1836735 59.1836735 10.2040816 57.1428571 2.44897959 49.7959184 0"],
+  'neck':          ["55.5102041 23.6734694 50.6122449 33.4693878 50.6122449 39.1836735 61.6326531 40 70.6122449 44.8979592 69.3877551 36.7346939 63.2653061 35.1020408 58.3673469 30.6122449","28.9795918 44.8979592 30.2040816 37.1428571 36.3265306 35.1020408 41.2244898 30.2040816 44.4897959 24.4897959 48.9795918 33.877551 48.5714286 39.1836735 37.9591837 39.5918367"],
+  'upper-chest':   ["51.8367347 41.6326531 51.0204082 49 57.5 49 67.0 49 70.6122449 47.3469388 62.0408163 41.6326531","29.7959184 46.5306122 31.0 49 40.5 49 48.0 49 47.755102 42.0408163 37.5510204 42.0408163"],
+  'lower-chest':   ["51.0204082 49 51.0204082 55.1020408 57.9591837 57.9591837 67.755102 55.5102041 67.0 49 57.5 49","31.0 49 31.4285714 55.5102041 40.8163265 57.9591837 48.1632653 55.1020408 48.0 49 40.5 49"],
+  'front-deltoid': ["70.6122449 44.8979592 69.3877551 36.7346939 63.2653061 35.1020408 61.6326531 40 67.0 49 70.0 53.0 72.244898 42.8571429","29.4 44.9 30.6 37.1 36.7 35.1 38.4 40 33.0 49 30.0 53.0 27.8 42.9"],
+  'side-deltoid':  ["78.3673469 53.0612245 79.5918367 47.755102 79.1836735 41.2244898 75.9183673 37.9591837 72.244898 42.8571429 70.0 53.0 74.0 57.0","21.6 53.1 20 47.755102 20.4081633 40.8163265 24.4897959 37.1428571 27.8 42.9 30.0 53.0 26.0 57.0"],
+  'biceps':        ["20.4081633 55.9183673 27.755102 49.3877551 28.9795918 53.877551 24.5 62 19.5 62","71.4285714 49.3877551 78.7755102 55.5102041 80.5 62 75.5 62 70.5 54.5"],
+  'brachialis':    ["19.5 62 24.5 62 22.8571429 66.122449 17.9591837 71.4285714 16.7346939 68.1632653","75.5 62 80.5 62 81.6326531 71.8367347 76.3265306 66.122449"],
+  'triceps':       ["69.3877551 55.5102041 69.3877551 61.6326531 75.9183673 72.6530612 77.5510204 70.2040816 75.5102041 67.3469388","22.4489796 69.3877551 29.7959184 55.5102041 29.7959184 60.8163265 22.8571429 73.0612245"],
+  'forearm-flex':  ["6.12244898 88.5714286 10.2040816 75.1020408 14.6938776 70.2040816 16.3265306 74.2857143 19.1836735 73.4693878 4.48979592 97.5510204 0 100","84.4897959 69.7959184 83.2653061 73.4693878 80 73.0612245 95.1020408 98.3673469 100 100.408163 93.4693878 89.3877551 89.7959184 76.3265306","77.5510204 72.244898 77.5510204 77.5510204 80.4081633 84.0816327 85.3061224 89.7959184 92.244898 101.22449 94.6938776 99.5918367","6.93877551 101.22449 13.4693878 90.6122449 18.7755102 84.0816327 21.6326531 77.1428571 21.2244898 71.8367347 4.89795918 98.7755102"],
+  'upper-abs':     ["51.0204082 57.1428571 50.6122449 67.3469388 51.0204082 83 53.5 83 56.5 83 58.3673469 77.9591837 57.9591837 64.0816327 56.3265306 59.1836735","43.6734694 58.7755102 48.5714286 57.1428571 48.9795918 67.3469388 46.5 83 41.5 83 40.8163265 78.3673469 41.2244898 64.4897959"],
+  'lower-abs':     ["51.0204082 83 53.5 83 56.5 83 58.3673469 92.6530612 56.3265306 98.3673469 55.1020408 104.081633 51.4285714 107.755102","46.5 83 48.5714286 84.4897959 48.1632653 107.346939 44.4897959 103.673469 40.8163265 91.4285714 41.5 83"],
+  'obliques':      ["68.5714286 63.2653061 67.3469388 57.1428571 58.7755102 59.5918367 60 64.0816327 60.4081633 83.2653061 65.7142857 78.7755102 66.5306122 69.7959184","33.877551 78.3673469 33.0612245 71.8367347 31.0204082 63.2653061 32.244898 57.1428571 40.8163265 59.1836735 39.1836735 63.2653061 39.1836735 83.6734694"],
+  'hip-flexors':   ["52.6530612 110.204082 54.2857143 124.897959 60 110.204082 62.0408163 100 64.8979592 94.2857143 60 92.6530612 56.7346939 104.489796","47.755102 110.612245 44.8979592 125.306122 42.0408163 115.918367 40.4081633 113.061224 39.5918367 107.346939 37.9591837 102.44898 34.6938776 93.877551 39.5918367 92.244898 41.6326531 99.1836735 43.6734694 105.306122"],
+  'quads':         ["34.6938776 98.7755102 37.1428571 108.163265 37.1428571 127.755102 34.2857143 137.142857 31.0204082 132.653061 29.3877551 120 28.1632653 111.428571 29.3877551 100.816327 32.244898 94.6938776","63.2653061 105.714286 64.4897959 100 66.9387755 94.6938776 70.2040816 101.22449 71.0204082 111.836735 68.1632653 133.061224 65.3061224 137.55102 62.4489796 128.571429 62.0408163 111.428571","38.7755102 129.387755 38.3673469 112.244898 41.2244898 118.367347 44.4897959 129.387755 42.8571429 135.102041 40 146.122449 36.3265306 146.530612 35.5102041 140","59.5918367 145.714286 55.5102041 128.979592 60.8163265 113.877551 61.2244898 130.204082 64.0816327 139.591837 62.8571429 146.530612","32.6530612 138.367347 26.5306122 145.714286 25.7142857 136.734694 25.7142857 127.346939 26.9387755 114.285714 29.3877551 133.469388","71.8367347 113.061224 73.877551 124.081633 73.877551 140.408163 72.6530612 145.714286 66.5306122 138.367347 70.2040816 133.469388"],
+  'tibialis':      ["62.5 148 64.0816327 162.44898 64.0816327 165.306122 62.0 170 60.5 155","37.5 148 35.9183673 162.44898 35.9183673 166.938776 38.0 170 39.5 155"],
+  'calves':        ["71.4285714 160.408163 73.4693878 153.469388 76.7346939 161.22449 79.5918367 167.755102 78.3673469 187.755102 79.5918367 195.510204 74.6938776 195.510204","24.8979592 194.693878 27.755102 164.897959 28.1632653 160.408163 26.122449 154.285714 24.8979592 157.55102 22.4489796 161.632653 20.8163265 167.755102 22.0408163 188.163265 20.8163265 195.510204","72.6530612 195.102041 69.7959184 159.183673 65.3061224 158.367347 64.0816327 162.44898 64.0816327 165.306122 65.7142857 177.142857","35.5102041 158.367347 35.9183673 162.44898 35.9183673 166.938776 35.1020408 172.244898 35.1020408 176.734694 32.244898 182.040816 30.6122449 187.346939 26.9387755 194.693878 27.3469388 187.755102 28.1632653 180.408163 28.5714286 175.510204 28.9795918 169.795918 29.7959184 164.081633 30.2040816 158.77551"],
+};
+
+const POSTERIOR_POLYS = {
+  'head-back':     ["50.6382979 0 45.9574468 0.85106383 40.8510638 5.53191489 40.4255319 12.7659574 45.106383 20 55.7446809 20 59.1489362 13.6170213 59.5744681 4.68085106 55.7446809 1.27659574"],
+  'upper-traps':   ["44.6808511 21.7021277 47.6595745 21.7021277 47.2340426 38.2978723 46.0 43 43.0 43 39.1489362 33.1914894 43.8297872 27.2340426","52.3404255 21.7021277 55.7446809 21.7021277 56.5957447 27.2340426 60.8510638 32.7659574 57.0 43 54.0 43 53.1914894 38.2978723"],
+  'lower-traps':   ["43.0 43 46.0 43 47.6595745 64.6808511 38.2978723 53.1914894 35.3191489 40.8510638","54.0 43 57.0 43 52.3404255 64.6808511 61.7021277 53.1914894 64.6808511 40.4255319"],
+  'rear-deltoid':  ["29.3617021 37.0212766 22.9787234 39.1489362 17.4468085 44.2553191 18.2978723 53.6170213 24.2553191 49.3617021 27.2340426 46.3829787","71.0638298 37.0212766 78.2978723 39.5744681 82.5531915 44.6808511 81.7021277 53.6170213 74.893617 48.9361702 72.3404255 45.106383"],
+  'lats':          ["31.0638298 38.7234043 28.0851064 48.9361702 28.5106383 55.3191489 34.0425532 75.3191489 36.0 68.0 36.0 54.0 33.6170213 41.2765957","68.9361702 38.7234043 71.9148936 49.3617021 71.4893617 56.1702128 65.9574468 75.3191489 64.0 68.0 64.0 54.0 66.3829787 41.7021277"],
+  'rhomboids':     ["36.0 54.0 36.0 68.0 47.2340426 71.0638298 47.2340426 66.3829787 47.6595745 64.6808511 47.0 50.0","64.0 54.0 64.0 68.0 52.7659574 71.0638298 52.7659574 66.3829787 52.3404255 64.6808511 53.0 50.0"],
+  'triceps':       ["26.8085106 49.787234 17.8723404 55.7446809 14.4680851 72.3404255 16.5957447 81.7021277 21.7021277 63.8297872 26.8085106 55.7446809","73.6170213 50.212766 82.1276596 55.7446809 85.9574468 73.1914894 83.4042553 82.1276596 77.8723404 62.9787234 73.1914894 55.7446809","26.8085106 58.2978723 26.8085106 68.5106383 22.9787234 75.3191489 19.1489362 77.4468085 22.5531915 65.5319149","72.7659574 58.2978723 77.0212766 64.6808511 80.4255319 77.4468085 76.5957447 75.3191489 72.7659574 68.9361702"],
+  'forearm-ext':   ["86.3829787 75.7446809 91.0638298 83.4042553 93.1914894 94.0425532 100 106.382979 96.1702128 104.255319 88.0851064 89.3617021 84.2553191 83.8297872","13.6170213 75.7446809 8.93617021 83.8297872 6.80851064 93.6170213 0 106.382979 3.82978723 104.255319 12.3404255 88.5106383 15.7446809 82.9787234","81.2765957 79.5744681 77.4468085 77.8723404 79.1489362 84.6808511 91.0638298 103.829787 93.1914894 108.93617 94.4680851 104.680851","18.7234043 79.5744681 22.1276596 77.8723404 20.8510638 84.2553191 9.36170213 102.978723 6.80851064 108.510638 5.10638298 104.680851"],
+  'erector':       ["47.6595745 72.7659574 34.4680851 77.0212766 35.3191489 83.4042553 49.3617021 102.12766 46.8085106 82.9787234","52.3404255 72.7659574 65.5319149 77.0212766 64.6808511 83.4042553 50.6382979 102.12766 53.1914894 83.8297872"],
+  'glutes':        ["44.6808511 99.5744681 30.212766 108.510638 29.787234 118.723404 31.4893617 125.957447 47.2340426 121.276596 49.3617021 114.893617","55.3191489 99.1489362 51.0638298 114.468085 52.3404255 120.851064 68.0851064 125.957447 69.787234 119.148936 69.3617021 108.510638"],
+  'hamstrings':    ["28.9361702 122.12766 31.0638298 129.361702 36.5957447 125.957447 35.3191489 135.319149 34.4680851 150.212766 29.3617021 158.297872 28.9361702 146.808511 27.6595745 141.276596 27.2340426 131.489362","71.4893617 121.702128 69.3617021 128.93617 63.8297872 125.957447 65.5319149 136.595745 66.3829787 150.212766 71.0638298 158.297872 71.4893617 147.659574 72.7659574 142.12766 73.6170213 131.914894","38.7234043 125.531915 44.2553191 145.957447 40.4255319 166.808511 36.1702128 152.765957 37.0212766 135.319149","61.7021277 125.531915 63.4042553 136.170213 64.2553191 153.191489 60 166.808511 56.1702128 146.382979"],
+  'calves':        ["29.3617021 160.425532 28.5106383 167.234043 24.6808511 179.574468 23.8297872 192.765957 25.5319149 197.021277 28.5106383 193.191489 29.787234 180 31.9148936 171.06383 31.9148936 166.808511","37.4468085 165.106383 35.3191489 167.659574 33.1914894 171.914894 31.0638298 180.425532 30.212766 191.914894 34.0425532 200 38.7234043 190.638298 39.1489362 168.93617","62.9787234 165.106383 61.2765957 168.510638 61.7021277 190.638298 66.3829787 199.574468 70.6382979 191.914894 68.9361702 179.574468 66.8085106 170.212766","70.6382979 160.425532 72.3404255 168.510638 75.7446809 179.148936 76.5957447 192.765957 74.4680851 196.595745 72.3404255 193.617021 70.6382979 179.574468 68.0851064 168.085106"],
+};
+
+// 1:1 mapping — every muscle has its own unique polygon key
+const MUSCLE_POLY_MAP = [
+  // Front view — 15 muscle regions
+  { mid:'upper-chest',   view:'front', key:'upper-chest'   },
+  { mid:'lower-chest',   view:'front', key:'lower-chest'   },
+  { mid:'front-deltoid', view:'front', key:'front-deltoid' },
+  { mid:'side-deltoid',  view:'front', key:'side-deltoid'  },
+  { mid:'biceps',        view:'front', key:'biceps'        },
+  { mid:'brachialis',    view:'front', key:'brachialis'    },
+  { mid:'triceps',       view:'front', key:'triceps'       },
+  { mid:'forearm-flex',  view:'front', key:'forearm-flex'  },
+  { mid:'upper-abs',     view:'front', key:'upper-abs'     },
+  { mid:'lower-abs',     view:'front', key:'lower-abs'     },
+  { mid:'obliques',      view:'front', key:'obliques'      },
+  { mid:'hip-flexors',   view:'front', key:'hip-flexors'   },
+  { mid:'quads',         view:'front', key:'quads'         },
+  { mid:'tibialis',      view:'front', key:'tibialis'      },
+  { mid:'calves',        view:'front', key:'calves'        },
+  // Back view — 11 muscle regions (triceps + calves also visible from back)
+  { mid:'upper-traps',   view:'back',  key:'upper-traps'   },
+  { mid:'lower-traps',   view:'back',  key:'lower-traps'   },
+  { mid:'rear-deltoid',  view:'back',  key:'rear-deltoid'  },
+  { mid:'lats',          view:'back',  key:'lats'          },
+  { mid:'rhomboids',     view:'back',  key:'rhomboids'     },
+  { mid:'triceps',       view:'back',  key:'triceps'       },
+  { mid:'forearm-ext',   view:'back',  key:'forearm-ext'   },
+  { mid:'erector',       view:'back',  key:'erector'       },
+  { mid:'glutes',        view:'back',  key:'glutes'        },
+  { mid:'hamstrings',    view:'back',  key:'hamstrings'    },
+  { mid:'calves',        view:'back',  key:'calves'        },
+
+];
+
+function getMuscleColor(muscleId) {
+  return LEVEL_COLORS[getMuscleLevel(muscleId)];
+}
+
+function buildBodySVG(view) {
+  const skinStroke = '#0a0a0f';
+  const skinColor  = '#2e2438';
+
+  // Build polyKey → muscleId for this view (1:1 since map is now array)
+  const keyToMuscle = {};
+  for (const entry of MUSCLE_POLY_MAP) {
+    if (entry.view !== view) continue;
+    keyToMuscle[entry.key] = entry.mid;
+  }
+
+  const polyData = view === 'front' ? ANTERIOR_POLYS : POSTERIOR_POLYS;
+  let html = '';
+
+  for (const [polyKey, polys] of Object.entries(polyData)) {
+    const isHead = polyKey === 'head-front' || polyKey === 'head-back' || polyKey === 'neck';
+
+    if (isHead) {
+      polys.forEach(pts => {
+        html += `<polygon points="${pts}" fill="${skinColor}" stroke="${skinStroke}" stroke-width="0.6"/>`;
+      });
+      if (view === 'front' && polyKey === 'head-front') {
+        html += `
+          <circle cx="46.5" cy="9.5" r="1.0" fill="#0a0a0f" opacity="0.65"/>
+          <circle cx="53.5" cy="9.5" r="1.0" fill="#0a0a0f" opacity="0.65"/>
+          <path d="M46.5 13.8 Q50 15.8 53.5 13.8" fill="none" stroke="#0a0a0f" stroke-width="0.75" stroke-linecap="round" opacity="0.45"/>
+        `;
+      }
+      continue;
+    }
+
+    const muscleId = keyToMuscle[polyKey];
+
+    if (!muscleId) {
+      // Non-muscle area — render as skin
+      polys.forEach(pts => {
+        html += `<polygon points="${pts}" fill="${skinColor}" stroke="${skinStroke}" stroke-width="0.6"/>`;
+      });
+      continue;
+    }
+
+    const color      = getMuscleColor(muscleId);
+    const isSelected = muscleId === selectedMuscle;
+
+    polys.forEach(pts => {
+      html += `<polygon
+        class="muscle-path${isSelected ? ' selected' : ''}"
+        points="${pts}"
+        fill="${color}"
+        stroke="${skinStroke}"
+        stroke-width="0.9"
+        data-muscle="${muscleId}"
+      />`;
+    });
+  }
+
+  return html;
+}
+
+
+function renderSVGs() {
+  const frontSVG = document.getElementById('svg-front');
+  const backSVG  = document.getElementById('svg-back');
+
+  frontSVG.setAttribute('viewBox', '0 0 100 230');
+  frontSVG.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+  backSVG.setAttribute('viewBox',  '0 0 100 230');
+  backSVG.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+
+  frontSVG.innerHTML = buildBodySVG('front');
+  backSVG.innerHTML  = buildBodySVG('back');
+
+  [frontSVG, backSVG].forEach(svg => {
+    svg.querySelectorAll('.muscle-path').forEach(el => {
+      el.addEventListener('click', e => {
+        const mids = e.target.dataset.muscles ? e.target.dataset.muscles.split(',') : [];
+        const mid  = e.target.dataset.muscle;
+        if (mids.length > 1 && mids.includes(selectedMuscle)) {
+          // Cycle to next muscle in group; wrapping around deselects
+          const idx = mids.indexOf(selectedMuscle);
+          const nextIdx = (idx + 1) % mids.length;
+          // If we've cycled all the way back to start, deselect instead
+          selectMuscle(nextIdx === 0 ? null : mids[nextIdx]);
+        } else if (mid) {
+          selectMuscle(mid);
+        }
+      });
+      el.addEventListener('mousemove', e => {
+        const mids = (e.target.dataset.muscles || '').split(',').filter(Boolean);
+        const displayMid = mids.includes(selectedMuscle) ? selectedMuscle : (e.target.dataset.muscle || '');
+        showTooltip(e, displayMid);
+      });
+      el.addEventListener('mouseleave', () => hideTooltip());
+    });
+  });
+}
+
+function showTooltip(e, muscleId) {
+  const muscle = MUSCLES.find(m => m.id === muscleId);
+  if (!muscle) return;
+  const level = getMuscleLevel(muscleId);
+  const best  = getBest1RM(muscleId);
+  const tt = document.getElementById('svg-tooltip');
+  tt.style.display = 'block';
+  tt.style.left = (e.clientX + 12) + 'px';
+  tt.style.top  = (e.clientY - 8) + 'px';
+  tt.textContent = `${muscle.name} · ${LEVEL_NAMES[level]}${best ? ' · '+best.toFixed(1)+'kg 1RM' : ''}`;
+}
+function hideTooltip() {
+  document.getElementById('svg-tooltip').style.display = 'none';
+}
+
+// ═══════════════════════════════════════════════════════
+// OVERVIEW GRID
+// ═══════════════════════════════════════════════════════
+
+function renderOverview() {
+  const counts = [0,0,0,0,0,0];
+  for (const m of MUSCLES) counts[getMuscleLevel(m.id)]++;
+  const trained = counts[1] + counts[2] + counts[3] + counts[4] + counts[5];
+  const labels  = ['No Data','Beginner','Novice','Intermed.','Advanced','Elite'];
+  const grid = document.getElementById('overview-grid');
+  // First cell: trained/total summary; then level buckets 1-5 only (skip 0=no data)
+  const trainedCell = `
+    <div class="overview-cell" title="${counts[0]} muscles not yet trained">
+      <div class="overview-dot" style="background:var(--accent)"></div>
+      <div class="overview-count" style="color:var(--accent)">${trained}<span style="font-size:11px;color:var(--text-dimmer)">/${MUSCLES.length}</span></div>
+      <div class="overview-label">Trained</div>
+    </div>`;
+  const levelCells = [1,2,3,4,5].map(i => `
+    <div class="overview-cell">
+      <div class="overview-dot" style="background:${LEVEL_COLORS[i]}"></div>
+      <div class="overview-count">${counts[i]}</div>
+      <div class="overview-label">${labels[i]}</div>
+    </div>`).join('');
+  grid.innerHTML = trainedCell + levelCells;
+}
+
+// ═══════════════════════════════════════════════════════
+// DETAIL PANEL
+// ═══════════════════════════════════════════════════════
+
+function selectMuscle(muscleId) {
+  // Toggle off if clicking the already-selected muscle
+  selectedMuscle = selectedMuscle === muscleId ? null : muscleId;
+  selectedExercise = null;
+  renderSVGs();
+  renderDetail();
+}
+
+function renderDetail() {
+  const muscle = MUSCLES.find(m => m.id === selectedMuscle);
+  if (!muscle) {
+    document.getElementById('detail-empty').style.display = 'flex';
+    document.getElementById('detail-content').style.display = 'none';
+    return;
+  }
+  document.getElementById('detail-empty').style.display = 'none';
+  document.getElementById('detail-content').style.display = 'flex';
+
+  document.getElementById('detail-name').textContent  = muscle.name;
+  document.getElementById('detail-group').textContent = muscle.group;
+
+  const level = getMuscleLevel(selectedMuscle);
+  const best  = getBest1RM(selectedMuscle);
+  const badge = document.getElementById('detail-level-badge');
+  badge.textContent = LEVEL_NAMES[level];
+  badge.style.background = LEVEL_COLORS[level];
+  badge.style.color = level === 0 ? 'var(--text-dim)' : (level <= 2 ? 'white' : level === 3 ? '#111' : 'white');
+
+  document.getElementById('detail-1rm').textContent = best
+    ? `Best 1RM: ${best.toFixed(1)} kg  ·  ${((best/(getWeightKgOn(null)||75))*100).toFixed(0)}% BW`
+    : 'No data yet';
+
+  renderDetailExercises();
+  renderDetailHistory();
+  renderDetailSessions();
+}
+
+function renderDetailExercises() {
+  const exs = EXERCISES.filter(e => e.muscles.includes(selectedMuscle));
+  const container = document.getElementById('exercise-cards-container');
+  if (exs.length === 0) { container.innerHTML = '<div class="no-data-note">No exercises mapped to this muscle.</div>'; return; }
+
+  container.innerHTML = `<div class="section-title">Exercises (${exs.length})</div><div class="exercise-cards" id="ex-cards"></div>`;
+  const cards = document.getElementById('ex-cards');
+
+  // Sort: exercises with data first
+  exs.sort((a,b) => {
+    const ba = getExerciseBest1RM(a.id).best || 0;
+    const bb = getExerciseBest1RM(b.id).best || 0;
+    return bb - ba;
+  });
+
+  cards.innerHTML = exs.map(ex => {
+    const { best } = getExerciseBest1RM(ex.id);
+    const isPrimary = ex.primaryMuscle === selectedMuscle;
+    const sessCount = state.sessions.filter(s => s.exerciseId === ex.id).length;
+    const isSelected = selectedExercise === ex.id;
+    return `
+      <div class="exercise-card${isSelected?' selected-ex':''}" onclick="selectDetailExercise('${ex.id}')">
+        <div>
+          <div class="ex-name">${ex.name}</div>
+          <div class="ex-meta">${isPrimary?'Primary':'Secondary'} · ${sessCount} session${sessCount!==1?'s':''}</div>
+        </div>
+        <div class="ex-1rm">${best ? best.toFixed(1)+' kg' : '—'}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+function selectDetailExercise(exId) {
+  selectedExercise = selectedExercise === exId ? null : exId;
+  renderDetailExercises();
+  renderDetailHistory();
+  renderDetailSessions();
+  switchDetailTab('history', null);
+  document.querySelectorAll('.detail-tab').forEach((t,i)=>{ t.classList.toggle('active', i===1); });
+}
+
+function renderDetailHistory() {
+  const chartSvg = document.getElementById('history-chart-svg');
+  const history = selectedExercise
+    ? getExerciseHistory(selectedExercise)
+    : getMuscleHistory(selectedMuscle);
+
+  const title = document.querySelector('#tab-history .section-title');
+  if (title) title.textContent = selectedExercise
+    ? `1RM Over Time · ${EXERCISES.find(e=>e.id===selectedExercise)?.name || ''}`
+    : `1RM Over Time · ${MUSCLES.find(m=>m.id===selectedMuscle)?.name || ''} (best exercise)`;
+
+  if (history.length < 2) {
+    chartSvg.innerHTML = `<text x="50%" y="50%" text-anchor="middle" fill="var(--text-dimmer)" font-size="11" font-family="JetBrains Mono">Not enough data yet</text>`;
+    return;
+  }
+
+  const W = 400, H = 120;
+  const pad = { t:10, r:10, b:24, l:40 };
+  const vals = history.map(h=>h.best1rm);
+  const minV = Math.min(...vals)*0.9, maxV = Math.max(...vals)*1.05;
+  const xScale = i => pad.l + (i/(history.length-1))*(W-pad.l-pad.r);
+  const yScale = v => pad.t + (1-(v-minV)/(maxV-minV))*(H-pad.t-pad.b);
+
+  const pts = history.map((h,i) => `${xScale(i)},${yScale(h.best1rm)}`).join(' ');
+  const areaBot = yScale(minV);
+  const areaPath = `M${xScale(0)},${areaBot} L${pts.split(' ').map((p,i)=>i===0?`${xScale(0)},${yScale(history[0].best1rm)}`:p).join(' L')} L${xScale(history.length-1)},${areaBot} Z`;
+
+  let ticksX = '';
+  const step = Math.max(1, Math.floor(history.length/4));
+  for (let i=0; i<history.length; i+=step) {
+    const x = xScale(i);
+    const d = history[i].date.slice(5);
+    ticksX += `<text x="${x}" y="${H-6}" text-anchor="middle" fill="var(--text-dimmer)" font-size="9" font-family="JetBrains Mono">${d}</text>`;
+  }
+
+  let ticksY = '';
+  for (let t=0; t<=3; t++) {
+    const v = minV + (t/3)*(maxV-minV);
+    const y = yScale(v);
+    ticksY += `<line x1="${pad.l}" x2="${W-pad.r}" y1="${y}" y2="${y}" stroke="var(--border)" stroke-width="0.5"/>`;
+    ticksY += `<text x="${pad.l-3}" y="${y+3}" text-anchor="end" fill="var(--text-dimmer)" font-size="9" font-family="JetBrains Mono">${v.toFixed(0)}</text>`;
+  }
+
+  const dotsHtml = history.map((h,i)=>`
+    <circle cx="${xScale(i)}" cy="${yScale(h.best1rm)}" r="3" fill="var(--accent)" stroke="var(--surface)" stroke-width="1.5">
+      <title>${h.date}: ${h.best1rm.toFixed(1)} kg</title>
+    </circle>
+  `).join('');
+
+  chartSvg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  chartSvg.innerHTML = `
+    <defs>
+      <linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="var(--accent)" stop-opacity="0.3"/>
+        <stop offset="100%" stop-color="var(--accent)" stop-opacity="0"/>
+      </linearGradient>
+    </defs>
+    ${ticksY}
+    <path d="${areaPath}" fill="url(#chartGrad)"/>
+    <polyline points="${pts}" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linejoin="round"/>
+    ${dotsHtml}
+    ${ticksX}
+  `;
+}
+
+function renderDetailSessions() {
+  const container = document.getElementById('sessions-table-container');
+  const exIds = selectedExercise
+    ? [selectedExercise]
+    : EXERCISES.filter(e=>e.muscles.includes(selectedMuscle)).map(e=>e.id);
+
+  const relevantSessions = state.sessions
+    .filter(s => exIds.includes(s.exerciseId))
+    .sort((a,b) => b.date.localeCompare(a.date));
+
+  if (relevantSessions.length === 0) {
+    container.innerHTML = '<div class="no-data-note">No sessions logged yet.</div>';
+    return;
+  }
+
+  let html = '';
+  for (const sess of relevantSessions) {
+    const exName = EXERCISES.find(e=>e.id===sess.exerciseId)?.name || sess.exerciseId;
+    html += `
+      <div style="margin-bottom:12px">
+        <div style="font-size:11px; color:var(--text-dim); font-family:var(--mono); padding:6px 8px; background:var(--surface2); border-radius:6px 6px 0 0; display:flex; justify-content:space-between">
+          <span>${sess.date} · ${exName}</span>
+          <span style="color:var(--accent)">${getBestTargetAdjFromSets(sess.sets) ? getBestTargetAdjFromSets(sess.sets).toFixed(1)+' kg adj.1RM' : ''}</span>
+        </div>
+        <table class="sessions-table" style="border-radius:0 0 6px 6px; overflow:hidden">
+          <tr>
+            <th>#</th><th>Type</th><th>Weight</th><th>Reps</th><th>RIR</th><th>Adj.1RM</th>
+            <th></th>
+          </tr>
+          ${sess.sets.map((set,si) => `
+            <tr>
+              <td>${si+1}</td>
+              <td><span class="set-type-badge badge-${set.type==='warmup'?'warmup':'target'}">${set.type==='warmup'?'WARM':'TARGET'}</span></td>
+              <td>${set.weight} kg</td>
+              <td>${set.reps}</td>
+              <td>${set.rir}</td>
+              <td>${set.type==='target'?set.adj1rm.toFixed(1)+' kg':'—'}</td>
+              <td>
+                <button class="btn-icon edit" onclick="openEditSetModal('${sess.id}','${si}')" title="Edit">✎</button>
+              </td>
+            </tr>
+          `).join('')}
+        </table>
+      </div>
+    `;
+  }
+  container.innerHTML = html;
+}
+
+function getBestTargetAdjFromSets(sets) {
+  let best = null;
+  for (const s of sets) {
+    if (s.type === 'target' && (best === null || s.adj1rm > best)) best = s.adj1rm;
+  }
+  return best;
+}
+
+function switchDetailTab(tabName, el) {
+  selectedDetailTab = tabName;
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+  document.getElementById('tab-'+tabName).classList.add('active');
+  if (el) {
+    document.querySelectorAll('.detail-tab').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+  }
+  if (tabName === 'history') renderDetailHistory();
+  if (tabName === 'sessions') renderDetailSessions();
+}
+
+// ═══════════════════════════════════════════════════════
+// LOG SESSION
+// ═══════════════════════════════════════════════════════
+
+function populateLogSelects() {
+  const muscleSelect   = document.getElementById('log-muscle-select');
+  const exerciseSelect = document.getElementById('log-exercise-select');
+
+  muscleSelect.innerHTML = '<option value="">— Select muscle —</option>' +
+    MUSCLES.map(m => `<option value="${m.id}">${m.name}</option>`).join('');
+
+  exerciseSelect.innerHTML = '<option value="">— Select exercise —</option>' +
+    EXERCISES.map(e => `<option value="${e.id}">${e.name}</option>`).join('');
+}
+
+function onLogMuscleChange() {
+  const muscleId = document.getElementById('log-muscle-select').value;
+  if (!muscleId) return;
+  // Filter exercises
+  const exSel = document.getElementById('log-exercise-select');
+  const exs = EXERCISES.filter(e => e.muscles.includes(muscleId));
+  exSel.innerHTML = '<option value="">— Select exercise —</option>' +
+    exs.map(e => `<option value="${e.id}">${e.name}</option>`).join('');
+  document.getElementById('log-muscle-inferred').textContent = '';
+}
+
+function onLogExerciseChange() {
+  const exId = document.getElementById('log-exercise-select').value;
+  if (!exId) return;
+  const ex = EXERCISES.find(e => e.id === exId);
+  if (!ex) return;
+  // Set primary muscle
+  const muscle = MUSCLES.find(m => m.id === ex.primaryMuscle);
+  document.getElementById('log-muscle-select').value = ex.primaryMuscle || '';
+  document.getElementById('log-muscle-inferred').textContent =
+    `↳ Primary: ${muscle?.name || ex.primaryMuscle}  ·  Also: ${ex.muscles.filter(m=>m!==ex.primaryMuscle).map(m=>MUSCLES.find(x=>x.id===m)?.name||m).join(', ')||'—'}`;
+}
+
+let sessionSets = [];
+
+function selectRIR(v) {
+  currentRIR = v;
+  document.querySelectorAll('#rir-btns .rir-btn').forEach((b,i) => b.classList.toggle('active', i===v));
+  updateSetPreview();
+}
+
+function updateSetPreview() {
+  const w = parseFloat(document.getElementById('set-weight').value);
+  const r = parseInt(document.getElementById('set-reps').value);
+  const rir = currentRIR;
+  const preview = document.getElementById('set-preview-1rm');
+  if (w && r && rir !== null) {
+    const adj = adjusted1RM(w, r, rir);
+    preview.textContent = `Adj. 1RM: ${adj.toFixed(1)} kg`;
+  } else {
+    preview.textContent = '';
+  }
+}
+
+document.addEventListener('input', e => {
+  if (e.target.id === 'set-weight' || e.target.id === 'set-reps') updateSetPreview();
+});
+
+function saveSet() {
+  const exId = document.getElementById('log-exercise-select').value;
+  if (!exId) { alert('Please select an exercise first.'); return; }
+  const type   = document.getElementById('set-type').value;
+  const weight = parseFloat(document.getElementById('set-weight').value);
+  const reps   = parseInt(document.getElementById('set-reps').value);
+  const rir    = currentRIR;
+  if (!weight || !reps || rir === null) { alert('Please fill in weight, reps, and RIR.'); return; }
+  const adj = adjusted1RM(weight, reps, rir);
+  sessionSets.push({ type, weight, reps, rir, adj1rm: adj });
+  renderSessionSets();
+  // Clear inputs
+  document.getElementById('set-weight').value = '';
+  document.getElementById('set-reps').value   = '';
+  currentRIR = null;
+  document.querySelectorAll('#rir-btns .rir-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('set-preview-1rm').textContent = '';
+}
+
+function renderSessionSets() {
+  const list = document.getElementById('sets-list');
+  if (sessionSets.length === 0) { list.innerHTML = ''; updateSessionBest(); return; }
+  list.innerHTML = sessionSets.map((s,i) => `
+    <div class="set-row">
+      <div class="set-row-num">S${i+1}</div>
+      <div class="set-row-info">
+        <span><span class="set-row-label">Type</span><span class="set-row-val">${s.type==='warmup'?'Warm-up':'Target'}</span></span>
+        <span><span class="set-row-label">Wt</span><span class="set-row-val">${s.weight}kg</span></span>
+        <span><span class="set-row-label">Reps</span><span class="set-row-val">${s.reps}</span></span>
+        <span><span class="set-row-label">RIR</span><span class="set-row-val">${s.rir}</span></span>
+      </div>
+      ${s.type==='target'?`<div class="set-row-1rm">${s.adj1rm.toFixed(1)} kg</div>`:''}
+      <div class="set-row-actions">
+        <button class="btn-icon edit" onclick="openSessionSetEdit(${i})" title="Edit">✎</button>
+        <button class="btn-icon del"  onclick="deleteSessionSet(${i})"  title="Delete">✕</button>
+      </div>
+    </div>
+  `).join('');
+  updateSessionBest();
+}
+
+function updateSessionBest() {
+  let best = null;
+  for (const s of sessionSets) {
+    if (s.type === 'target' && (best === null || s.adj1rm > best)) best = s.adj1rm;
+  }
+  const el = document.getElementById('session-best-1rm');
+  el.textContent = best ? `Best adj.1RM: ${best.toFixed(1)} kg` : '';
+}
+
+function deleteSessionSet(i) {
+  sessionSets.splice(i,1);
+  renderSessionSets();
+}
+
+function openSessionSetEdit(i) {
+  editingSetIdx = i;
+  const s = sessionSets[i];
+  document.getElementById('edit-set-type').value   = s.type;
+  document.getElementById('edit-set-weight').value = s.weight;
+  document.getElementById('edit-set-reps').value   = s.reps;
+  editRIR = s.rir;
+  document.querySelectorAll('#edit-rir-btns .rir-btn').forEach((b,j) => b.classList.toggle('active', j===s.rir));
+  openModal('edit-set-modal');
+}
+
+function selectEditRIR(v) {
+  editRIR = v;
+  document.querySelectorAll('#edit-rir-btns .rir-btn').forEach((b,i) => b.classList.toggle('active', i===v));
+}
+
+function saveEditSet() {
+  if (editingSetIdx === null) return;
+  const type   = document.getElementById('edit-set-type').value;
+  const weight = parseFloat(document.getElementById('edit-set-weight').value);
+  const reps   = parseInt(document.getElementById('edit-set-reps').value);
+  const rir    = editRIR;
+  if (!weight || !reps || rir === null) { alert('Fill all fields.'); return; }
+  const adj = adjusted1RM(weight, reps, rir);
+  sessionSets[editingSetIdx] = { type, weight, reps, rir, adj1rm: adj };
+  editingSetIdx = null;
+  closeModal('edit-set-modal');
+  renderSessionSets();
+}
+
+function endSession() {
+  const exId = document.getElementById('log-exercise-select').value;
+  if (!exId) { alert('Please select an exercise.'); return; }
+  if (sessionSets.length === 0) { alert('No sets logged.'); return; }
+  const date = document.getElementById('log-date').value || todayStr();
+  // Snapshot demographic data at time of session
+  const weightKgAtSession   = getWeightKgOn(date);
+  const ageAtSession        = getAgeOn(date);
+  const thresholdMult       = getThresholdMultiplier(date);
+  const sess = {
+    id: 'sess_' + Date.now(),
+    date,
+    exerciseId: exId,
+    weightKgAtSession,
+    ageAtSession,
+    thresholdMult,
+    sets: [...sessionSets],
+  };
+  state.sessions.push(sess);
+  saveState();
+  sessionSets = [];
+  renderSessionSets();
+  document.getElementById('end-session-note').textContent = `✓ Session saved · ${date} · ${ageAtSession}y · ${displayWeight(weightKgAtSession)}`;
+  setTimeout(()=>{ document.getElementById('end-session-note').textContent=''; }, 4000);
+  renderSVGs();
+  renderOverview();
+  if (selectedMuscle) renderDetail();
+}
+
+function clearSession() {
+  if (!confirm('Clear all sets in this session?')) return;
+  sessionSets = [];
+  renderSessionSets();
+}
+
+// Edit set from history panel
+function openEditSetModal(sessId, setIdx) {
+  const sess = state.sessions.find(s => s.id === sessId);
+  if (!sess) return;
+  const idx = parseInt(setIdx);
+  const set = sess.sets[idx];
+  editingSetIdx = { sessId, setIdx: idx };
+  document.getElementById('edit-set-type').value   = set.type;
+  document.getElementById('edit-set-weight').value = set.weight;
+  document.getElementById('edit-set-reps').value   = set.reps;
+  editRIR = set.rir;
+  document.querySelectorAll('#edit-rir-btns .rir-btn').forEach((b,i) => b.classList.toggle('active', i===set.rir));
+  openModal('edit-set-modal');
+}
+
+// Override saveEditSet to handle both cases
+const _origSaveEditSet = saveEditSet;
+window.saveEditSet = function() {
+  if (editingSetIdx === null) return;
+  const type   = document.getElementById('edit-set-type').value;
+  const weight = parseFloat(document.getElementById('edit-set-weight').value);
+  const reps   = parseInt(document.getElementById('edit-set-reps').value);
+  const rir    = editRIR;
+  if (!weight || !reps || rir === null) { alert('Fill all fields.'); return; }
+  const adj = adjusted1RM(weight, reps, rir);
+  const newSet = { type, weight, reps, rir, adj1rm: adj };
+
+  if (typeof editingSetIdx === 'object' && editingSetIdx.sessId) {
+    // Editing saved session
+    const sess = state.sessions.find(s => s.id === editingSetIdx.sessId);
+    if (sess) {
+      sess.sets[editingSetIdx.setIdx] = newSet;
+      saveState();
+      renderSVGs();
+      renderOverview();
+      if (selectedMuscle) renderDetail();
+    }
+  } else {
+    // Editing current session
+    sessionSets[editingSetIdx] = newSet;
+    renderSessionSets();
+  }
+  editingSetIdx = null;
+  closeModal('edit-set-modal');
+};
+
+// ═══════════════════════════════════════════════════════
+// METRICS
+// ═══════════════════════════════════════════════════════
+
+const METRIC_FIELDS = [
+  { id:'weight',   label:'Weight',          unit:'kg'   },
+  { id:'bmi',      label:'BMI',             unit:''     },
+  { id:'bodyfat',  label:'Body Fat',        unit:'%'    },
+  { id:'subdermal',label:'Subdermal Fat',   unit:'%'    },
+  { id:'visceral', label:'Visceral Fat',    unit:''     },
+  { id:'water',    label:'Body Water',      unit:'%'    },
+  { id:'skeletal', label:'Skeletal Muscle', unit:'%'    },
+  { id:'bone',     label:'Bone Mass',       unit:'kg'   },
+  { id:'protein',  label:'Protein',         unit:'%'    },
+  { id:'muscle',   label:'Muscle Mass',     unit:'kg'   },
+  { id:'ffbw',     label:'Fat Free BW',     unit:'kg'   },
+  { id:'bmr',      label:'BMR',             unit:'kcal' },
+  { id:'metage',   label:'Metabolic Age',   unit:'yrs'  },
+];
+
+function renderMetrics() {
+  // ── Profile grid ──
+  const s = state.settings;
+  const profileGrid = document.getElementById('metrics-profile-grid');
+
+  const ageDisplay = s.dob
+    ? `${getAgeOn(null)} yrs <span style="color:var(--text-dimmer);font-size:10px">(from DOB)</span>`
+    : s.ageManual
+      ? `${getAgeOn(null)} yrs <span style="color:var(--text-dimmer);font-size:10px">(manual)</span>`
+      : '—';
+
+  const heightDisplay = s.heightCm
+    ? (s.heightUnit === 'ftin'
+        ? (() => { const t = s.heightCm * CM_TO_IN; return `${Math.floor(t/12)}' ${Math.round((t%12)*2)/2}"`; })()
+        : `${Math.round(s.heightCm)} cm`)
+    : '—';
+
+  const weightDisplay = s.weightKg
+    ? (s.weightUnit === 'lbs'
+        ? `${(s.weightKg * KG_TO_LBS).toFixed(1)} lbs`
+        : `${s.weightKg.toFixed(1)} kg`)
+    : '—';
+
+  const ts = s._ts || {};
+  const profileCards = [
+    { label: 'Name',   val: s.name || '—',                                      ts: ts.name },
+    { label: 'Sex',    val: s.sex ? (s.sex.charAt(0).toUpperCase()+s.sex.slice(1)) : '—', ts: ts.sex },
+    { label: 'Age',    val: ageDisplay,                                           ts: ts.dob || ts.ageManual },
+    { label: 'Weight', val: weightDisplay,                                        ts: ts.weightKg },
+    { label: 'Height', val: heightDisplay,                                        ts: ts.heightCm },
+  ];
+
+  profileGrid.innerHTML = profileCards.map(c => `
+    <div class="metric-card">
+      <div class="metric-name">${c.label}${c.ts ? `<span style="display:block;font-size:9px;color:var(--text-dimmer);margin-top:1px">updated ${c.ts}</span>` : ''}</div>
+      <div class="metric-val" style="font-size:16px">${c.val}</div>
+    </div>
+  `).join('');
+
+  // ── Scale snapshot grid ──
+  const latest = state.metrics.length > 0
+    ? state.metrics.slice().sort((a,b)=>b.date.localeCompare(a.date))[0]
+    : null;
+
+  const grid = document.getElementById('metrics-latest-grid');
+  if (!latest) {
+    grid.innerHTML = '<div class="no-data-note" style="grid-column:1/-1">No scale data logged yet. Use "+ Log Today" to add.</div>';
+  } else {
+    grid.innerHTML = METRIC_FIELDS.map(f => {
+      const v = latest[f.id];
+      return `<div class="metric-card">
+        <div class="metric-name">${f.label}<span style="display:block;font-size:9px;color:var(--text-dimmer);margin-top:1px">${latest.date}</span></div>
+        <div class="metric-val">${v!=null?v:'—'}<span class="metric-unit">${v!=null?' '+f.unit:''}</span></div>
+      </div>`;
+    }).join('');
+  }
+
+  // ── History table ──
+  const histContainer = document.getElementById('metrics-history-container');
+  if (state.metrics.length === 0) {
+    histContainer.innerHTML = '<div class="no-data-note">No scale entries yet.</div>';
+    return;
+  }
+  const sorted = state.metrics.slice().sort((a,b)=>b.date.localeCompare(a.date));
+  histContainer.innerHTML = `
+    <table class="metrics-log-table">
+      <tr>
+        <th>Date</th>
+        ${METRIC_FIELDS.map(f=>`<th>${f.label}</th>`).join('')}
+        <th></th>
+      </tr>
+      ${sorted.map(m => `
+        <tr>
+          <td style="white-space:nowrap">${m.date}</td>
+          ${METRIC_FIELDS.map(f=>`<td>${m[f.id]!=null?m[f.id]+' '+f.unit:'—'}</td>`).join('')}
+          <td><button class="btn-icon del" onclick="deleteMetric('${m.id}')" title="Delete">✕</button></td>
+        </tr>
+      `).join('')}
+    </table>
+  `;
+}
+
+function openMetricsModal() {
+  document.getElementById('metrics-date').value = todayStr();
+  METRIC_FIELDS.forEach(f => { document.getElementById('m-'+f.id).value = ''; });
+  openModal('metrics-modal');
+}
+
+function saveMetrics() {
+  const date = document.getElementById('metrics-date').value || todayStr();
+  const entry = { id: 'metric_'+Date.now(), date };
+  METRIC_FIELDS.forEach(f => {
+    const v = document.getElementById('m-'+f.id).value;
+    entry[f.id] = v !== '' ? parseFloat(v) : null;
+  });
+  // Store weight in kg internally — convert if user is in imperial
+  if (entry.weight != null) {
+    entry.weightKg = state.settings.units === 'imperial'
+      ? entry.weight * LBS_TO_KG
+      : entry.weight;
+    // Also update profile weight
+    state.settings.weightKg = entry.weightKg;
+    state.settings._ts = { ...state.settings._ts, weightKg: date };
+  }
+  state.metrics.push(entry);
+  saveState();
+  closeModal('metrics-modal');
+  renderMetrics();
+  renderSVGs();
+  renderOverview();
+}
+
+function deleteMetric(id) {
+  if (!confirm('Delete this entry?')) return;
+  state.metrics = state.metrics.filter(m => m.id !== id);
+  saveState();
+  renderMetrics();
+}
+
+// ═══════════════════════════════════════════════════════
+// SETTINGS MODAL  — full profile
+// ═══════════════════════════════════════════════════════
+
+// ═══════════════════════════════════════════════════════
+// RADIO BUTTON HELPER
+// ═══════════════════════════════════════════════════════
+
+function pickRadio(groupId, value) {
+  const group = document.getElementById(groupId);
+  if (!group) return;
+  group.querySelectorAll('.radio-option').forEach(opt => {
+    const inp = opt.querySelector('input[type="radio"]');
+    const isMatch = inp && inp.value === value;
+    opt.classList.toggle('checked', isMatch);
+    if (inp) inp.checked = isMatch;
+  });
+}
+
+function getRadioValue(groupId) {
+  const group = document.getElementById(groupId);
+  if (!group) return null;
+  const checked = group.querySelector('.radio-option.checked input[type="radio"]');
+  return checked ? checked.value : null;
+}
+
+// ═══════════════════════════════════════════════════════
+// PROFILE GATE JS
+// ═══════════════════════════════════════════════════════
+
+function isProfileComplete() {
+  const s = state.settings;
+  return !!(s.sex && s.weightKg && s.heightCm && (s.dob || s.ageManual));
+}
+
+function checkProfileGate() {
+  const overlay = document.getElementById('profile-gate-overlay');
+  if (!isProfileComplete()) {
+    overlay.classList.remove('hidden');
+    // Prevent clicking outside to dismiss when profile incomplete
+    overlay.onclick = null;
+  } else {
+    overlay.classList.add('hidden');
+  }
+}
+
+// Called when DOB is filled in gate form — clear age field
+function pgDobChanged() {
+  const dob = document.getElementById('pg-dob').value;
+  if (dob) document.getElementById('pg-age').value = '';
+}
+// Called when age is filled — clear DOB
+function pgAgeChanged() {
+  const age = document.getElementById('pg-age').value;
+  if (age) document.getElementById('pg-dob').value = '';
+}
+
+function pgToggleHeight() {
+  const isFtin = getRadioValue('pg-height-unit-group') === 'ftin';
+  document.getElementById('pg-height-cm-wrap').style.display   = isFtin ? 'none' : 'flex';
+  document.getElementById('pg-height-ftin-wrap').style.display = isFtin ? 'flex' : 'none';
+}
+
+function saveProfileGate() {
+  const today = todayStr();
+  const s = state.settings;
+  s._ts = s._ts || {};
+
+  s.name = document.getElementById('pg-name').value.trim();
+  s.sex  = getRadioValue('pg-sex-group') || '';
+  s._ts.name = today;
+  s._ts.sex  = today;
+
+  // Age — whichever field has a value wins; DOB takes priority
+  const dob = document.getElementById('pg-dob').value;
+  const age = parseInt(document.getElementById('pg-age').value);
+  if (dob) {
+    s.dobMode = 'dob'; s.dob = dob; s.ageManual = null; s._ts.dob = today;
+  } else if (age) {
+    s.dobMode = 'age'; s.ageManual = age; s.ageUpdatedDate = today; s.dob = ''; s._ts.ageManual = today;
+  }
+
+  // Weight
+  const wRaw  = parseFloat(document.getElementById('pg-weight').value) || 0;
+  const wUnit = getRadioValue('pg-weight-unit-group') || 'kg';
+  s.weightKg  = wUnit === 'lbs' ? wRaw * LBS_TO_KG : wRaw;
+  s.weightUnit = wUnit;
+  s._ts.weightKg = today;
+
+  // Height
+  const hUnit = getRadioValue('pg-height-unit-group') || 'cm';
+  s.heightUnit = hUnit;
+  if (hUnit === 'ftin') {
+    const ft  = parseFloat(document.getElementById('pg-height-ft').value) || 0;
+    const ins = parseFloat(document.getElementById('pg-height-in').value) || 0;
+    s.heightCm = (ft * 12 + ins) * IN_TO_CM;
+  } else {
+    s.heightCm = parseFloat(document.getElementById('pg-height-cm').value) || 0;
+  }
+  s._ts.heightCm = today;
+
+  if (!s.sex || !s.weightKg || !s.heightCm || (!s.dob && !s.ageManual)) {
+    alert('Please fill in all fields — Sex, Age (DOB or manual), Weight, and Height.');
+    return;
+  }
+
+  saveState();
+  document.getElementById('profile-gate-overlay').classList.add('hidden');
+  renderSVGs();
+  renderOverview();
+}
+
+// ═══════════════════════════════════════════════════════
+// SETTINGS MODAL JS
+// ═══════════════════════════════════════════════════════
+
+function openSettingsModal() {
+  const s = state.settings;
+
+  document.getElementById('sp-name').value = s.name || '';
+
+  // Sex radio
+  if (s.sex) pickRadio('sp-sex-group', s.sex);
+
+  // DOB / age — show both, populate whichever is set
+  document.getElementById('sp-dob').value = s.dob || '';
+  document.getElementById('sp-age').value = s.ageManual || '';
+
+  // Weight — populate and set unit radio
+  const wUnit = s.weightUnit || 'kg';
+  const dispW = s.weightKg
+    ? (wUnit === 'lbs' ? (s.weightKg * KG_TO_LBS).toFixed(1) : s.weightKg.toFixed(1))
+    : '';
+  document.getElementById('sp-weight').value = dispW;
+  pickRadio('sp-weight-unit-group', wUnit);
+
+  // Height — populate and set unit radio
+  const hUnit = s.heightUnit || 'cm';
+  pickRadio('sp-height-unit-group', hUnit);
+  spToggleHeight();
+  if (hUnit === 'ftin' && s.heightCm) {
+    const totalIn = s.heightCm * CM_TO_IN;
+    document.getElementById('sp-height-ft').value = Math.floor(totalIn / 12);
+    document.getElementById('sp-height-in').value = Math.round((totalIn % 12) * 2) / 2;
+  } else if (s.heightCm) {
+    document.getElementById('sp-height-cm').value = s.heightCm.toFixed(0);
+  }
+
+  renderProfileTimestamps();
+  openModal('settings-modal');
+}
+
+function spDobChanged() {
+  const dob = document.getElementById('sp-dob').value;
+  if (dob) document.getElementById('sp-age').value = '';
+}
+function spAgeChanged() {
+  const age = document.getElementById('sp-age').value;
+  if (age) document.getElementById('sp-dob').value = '';
+}
+
+function spToggleHeight() {
+  const isFtin = getRadioValue('sp-height-unit-group') === 'ftin';
+  document.getElementById('sp-height-cm-wrap').style.display   = isFtin ? 'none' : 'flex';
+  document.getElementById('sp-height-ftin-wrap').style.display = isFtin ? 'flex' : 'none';
+}
+
+function renderProfileTimestamps() {
+  const ts  = state.settings._ts || {};
+  const map = { name:'Name', sex:'Sex', heightCm:'Height', weightKg:'Weight', dob:'Date of Birth', ageManual:'Age' };
+  const parts = Object.entries(map).filter(([k]) => ts[k]).map(([k,lbl]) => `${lbl}: ${ts[k]}`);
+  const el = document.getElementById('sp-timestamps');
+  el.innerHTML = parts.length
+    ? `<div style="font-size:10px;color:var(--text-dimmer);font-family:var(--mono);line-height:2;margin-top:4px">Last updated — ${parts.join('  ·  ')}</div>`
+    : '';
+}
+
+function saveSettings() {
+  const today = todayStr();
+  const s  = state.settings;
+  const ts = s._ts || {};
+
+  const name = document.getElementById('sp-name').value.trim();
+  const sex  = getRadioValue('sp-sex-group') || '';
+  if (name !== s.name) ts.name = today;
+  if (sex  !== s.sex)  ts.sex  = today;
+  s.name = name; s.sex = sex;
+
+  // Age — DOB takes priority if both filled; clearing one defers to other
+  const dob = document.getElementById('sp-dob').value;
+  const age = parseInt(document.getElementById('sp-age').value);
+  if (dob) {
+    if (dob !== s.dob) ts.dob = today;
+    s.dobMode = 'dob'; s.dob = dob; s.ageManual = null;
+  } else if (age) {
+    if (age !== s.ageManual) { ts.ageManual = today; s.ageUpdatedDate = today; }
+    s.dobMode = 'age'; s.ageManual = age; s.dob = '';
+  }
+
+  // Weight
+  const wUnit = getRadioValue('sp-weight-unit-group') || 'kg';
+  const wRaw  = parseFloat(document.getElementById('sp-weight').value) || 0;
+  const wKg   = wUnit === 'lbs' ? wRaw * LBS_TO_KG : wRaw;
+  if (Math.abs(wKg - (s.weightKg||0)) > 0.1) ts.weightKg = today;
+  s.weightKg = wKg; s.weightUnit = wUnit;
+
+  // Height
+  const hUnit = getRadioValue('sp-height-unit-group') || 'cm';
+  s.heightUnit = hUnit;
+  let cm = 0;
+  if (hUnit === 'ftin') {
+    const ft  = parseFloat(document.getElementById('sp-height-ft')?.value) || 0;
+    const ins = parseFloat(document.getElementById('sp-height-in')?.value) || 0;
+    cm = (ft * 12 + ins) * IN_TO_CM;
+  } else {
+    cm = parseFloat(document.getElementById('sp-height-cm')?.value) || 0;
+  }
+  if (Math.abs(cm - (s.heightCm||0)) > 0.5) ts.heightCm = today;
+  s.heightCm = cm;
+
+  s._ts = ts;
+  saveState();
+  closeModal('settings-modal');
+  renderSVGs();
+  renderOverview();
+  if (selectedMuscle) renderDetail();
+}
+
+
+
+// ═══════════════════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════════════════
+
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.header-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  const tabs = document.querySelectorAll('.header-tab');
+  const map = { map:0, log:1, metrics:2 };
+  tabs[map[name]].classList.add('active');
+  if (name === 'metrics') renderMetrics();
+}
+
+// ═══════════════════════════════════════════════════════
+// MODALS
+// ═══════════════════════════════════════════════════════
+
+function openModal(id)  { document.getElementById(id).classList.remove('hidden'); }
+function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+document.querySelectorAll('.modal-overlay').forEach(o => {
+  o.addEventListener('click', e => {
+    // Never allow clicking outside to close the profile gate
+    if (o.id === 'profile-gate-overlay') return;
+    if (e.target === o) o.classList.add('hidden');
+  });
+});
+
+// ═══════════════════════════════════════════════════════
+// UTILS
+// ═══════════════════════════════════════════════════════
+
+function todayStr() {
+  return new Date().toISOString().slice(0,10);
+}
+
+// ═══════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════
+
+function init() {
+  loadState();
+  document.getElementById('log-date').value = todayStr();
+  populateLogSelects();
+  renderSVGs();
+  renderOverview();
+  renderDetail();
+  checkProfileGate();
+}
+
+init();
+</script>
+<script data-goatcounter="https://btnonline-my-muscle-map.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
+</body>
+</html>
