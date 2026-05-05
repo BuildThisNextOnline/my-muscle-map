@@ -65,7 +65,6 @@ Log your full body composition data by date (weight, BMI, body fat %, muscle mas
 | Hip Flexors | Calves |
 | Quads | |
 | Tibialis Anterior | |
-| Calves (front) | |
 
 ---
 
