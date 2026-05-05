@@ -1723,6 +1723,18 @@ function parseWeightToKg(val) {
   return state.settings.units === 'imperial' ? n * LBS_TO_KG : n;
 }
 
+// ═══════════════════════════════════════════════════════
+// CALCULATIONS
+// ═══════════════════════════════════════════════════════
+
+function epley1RM(weight, reps) {
+  return weight * (1 + reps / 30);
+}
+
+function adjusted1RM(weight, reps, rir) {
+  return epley1RM(weight, reps) * (1 + (rir || 0) / 30);
+}
+
 function getMuscleLevel(muscleId) {
   // Uses best 1RM across all sessions, each session's weight/age snapshot
   const muscle = MUSCLES.find(m => m.id === muscleId);
