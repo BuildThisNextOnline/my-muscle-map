@@ -906,6 +906,7 @@ header {
   display: none;
 }
 </style>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
 
@@ -917,6 +918,12 @@ header {
     <button class="header-tab" onclick="showPage('metrics')">Body Metrics</button>
   </div>
   <div class="header-right">
+    <div id="gsi-status" style="display:flex;align-items:center;gap:8px">
+      <span id="gsi-user-label" style="font-size:11px;color:var(--text-dim);font-family:var(--mono);display:none"></span>
+      <button id="gsi-signin-btn" class="btn btn-ghost btn-sm" onclick="gsiSignIn()" style="display:none">⬡ Sign in with Google</button>
+      <button id="gsi-signout-btn" class="btn btn-ghost btn-sm" onclick="gsiSignOut()" style="display:none;font-size:11px">Sign out</button>
+      <span id="gsi-sync-indicator" style="font-size:10px;font-family:var(--mono);color:var(--text-dimmer);display:none"></span>
+    </div>
     <button class="btn btn-ghost btn-sm" onclick="openSettingsModal()">⚙ Settings</button>
   </div>
 </header>
@@ -2924,7 +2931,386 @@ function init() {
   renderOverview();
   renderDetail();
   checkProfileGate();
+  // Show sign-in button and init Google auth after page load
+  window.addEventListener('load', () => {
+    document.getElementById('gsi-signin-btn').style.display = '';
+    gsiInit();
+  });
 }
+
+
+// ═══════════════════════════════════════════════════════
+// GOOGLE OAUTH + SHEETS SYNC
+// ═══════════════════════════════════════════════════════
+
+const GSI_CLIENT_ID  = '1075585572990-1b278m6rds89ghlug9vrodfjarbj0g63.apps.googleusercontent.com';
+const GSI_SCOPES     = 'https://www.googleapis.com/auth/drive.file';
+const SHEETS_API     = 'https://sheets.googleapis.com/v4/spreadsheets';
+const DRIVE_API      = 'https://www.googleapis.com/drive/v3';
+
+let gsiAccessToken   = null;
+let gsiTokenExpiry   = 0;
+let gsiUserName      = null;
+let gsiSheetId       = null; // cached after first creation/lookup
+let gsiPendingSync   = false;
+
+// ── Token client ─────────────────────────────────────
+let gsiTokenClient = null;
+
+function gsiInit() {
+  // Restore cached token + sheet ID
+  gsiSheetId    = localStorage.getItem('mmm_gsi_sheet_id') || null;
+  gsiUserName   = localStorage.getItem('mmm_gsi_user')     || null;
+  const token   = localStorage.getItem('mmm_gsi_token');
+  const expiry  = parseInt(localStorage.getItem('mmm_gsi_expiry') || '0');
+
+  if (token && Date.now() < expiry) {
+    gsiAccessToken = token;
+    gsiTokenExpiry = expiry;
+    gsiUpdateUI(true);
+    gsiSyncOnLoad();
+  } else {
+    gsiUpdateUI(false);
+  }
+}
+
+const MMM_REGISTRY_URL = 'https://script.google.com/macros/s/AKfycbyRymOkAu_PswGQMCwpwD6M0VCc9wx21BTW46Erlvrd_pzgR-e6tz4pioJ-8ys_r7vadQ/exec';
+
+function gsiGetOrCreateUUID() {
+  let uuid = localStorage.getItem('mmm_uuid');
+  if (!uuid) {
+    uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+      const r = Math.random() * 16 | 0;
+      return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+    });
+    localStorage.setItem('mmm_uuid', uuid);
+  }
+  return uuid;
+}
+
+async function gsiRegisterUser(event = 'signin') {
+  const uuid = gsiGetOrCreateUUID();
+  const isFirstSignIn = !localStorage.getItem('mmm_registered');
+  // Only POST on first sign-in ever — subsequent sign-ins just log 'return'
+  try {
+    await fetch(MMM_REGISTRY_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ uuid, event: isFirstSignIn ? 'first_signin' : event }),
+    });
+    localStorage.setItem('mmm_registered', '1');
+  } catch(e) {
+    console.log('Registry ping failed silently:', e);
+  }
+}
+
+function gsiSignIn() {
+  if (!window.google) { alert('Google Sign-In not loaded. Check your internet connection.'); return; }
+  gsiTokenClient = google.accounts.oauth2.initTokenClient({
+    client_id: GSI_CLIENT_ID,
+    scope: GSI_SCOPES,
+    callback: async (resp) => {
+      if (resp.error) { console.error('GSI error:', resp); return; }
+      gsiAccessToken = resp.access_token;
+      gsiTokenExpiry = Date.now() + (resp.expires_in - 60) * 1000;
+      localStorage.setItem('mmm_gsi_token',  gsiAccessToken);
+      localStorage.setItem('mmm_gsi_expiry', gsiTokenExpiry);
+
+      // Get user name from token info
+      try {
+        const info = await fetch(`https://www.googleapis.com/oauth2/v3/tokeninfo?access_token=${gsiAccessToken}`);
+        const d    = await info.json();
+        gsiUserName = d.name || d.email || 'User';
+        localStorage.setItem('mmm_gsi_user', gsiUserName);
+      } catch(e) { gsiUserName = 'User'; }
+
+      // Register anonymous UUID with user registry (fire and forget)
+      gsiRegisterUser('signin');
+
+      gsiUpdateUI(true);
+      await gsiEnsureSheet();
+      await gsiPushAll();
+    },
+  });
+  gsiTokenClient.requestAccessToken({ prompt: 'consent' });
+}
+
+function gsiSignOut() {
+  if (gsiAccessToken && window.google) {
+    google.accounts.oauth2.revoke(gsiAccessToken);
+  }
+  gsiAccessToken = null;
+  gsiSheetId     = null;
+  gsiUserName    = null;
+  localStorage.removeItem('mmm_gsi_token');
+  localStorage.removeItem('mmm_gsi_expiry');
+  localStorage.removeItem('mmm_gsi_sheet_id');
+  localStorage.removeItem('mmm_gsi_user');
+  gsiUpdateUI(false);
+}
+
+function gsiUpdateUI(signedIn) {
+  document.getElementById('gsi-signin-btn').style.display  = signedIn ? 'none'  : '';
+  document.getElementById('gsi-signout-btn').style.display = signedIn ? ''      : 'none';
+  const label = document.getElementById('gsi-user-label');
+  if (signedIn && gsiUserName) {
+    label.textContent = gsiUserName;
+    label.style.display = '';
+  } else {
+    label.style.display = 'none';
+  }
+}
+
+function gsiSyncIndicator(msg) {
+  const el = document.getElementById('gsi-sync-indicator');
+  el.textContent = msg;
+  el.style.display = msg ? '' : 'none';
+}
+
+function gsiIsReady() {
+  return gsiAccessToken && Date.now() < gsiTokenExpiry;
+}
+
+// ── Sheet management ──────────────────────────────────
+
+async function gsiEnsureSheet() {
+  if (gsiSheetId) return gsiSheetId;
+  gsiSyncIndicator('Setting up sheet…');
+
+  // Build sheet name from user's Google name and today's date
+  const nameParts = (gsiUserName || 'User').split(' ');
+  const first = nameParts[0] || '';
+  const last  = nameParts.slice(1).join(' ') || '';
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const d = new Date();
+  const dateStr = `${String(d.getDate()).padStart(2,'0')}-${months[d.getMonth()]}-${d.getFullYear()}`;
+  const sheetName = `MMM - My Muscle Map - ${first}${last ? ' '+last : ''} - ${dateStr} onwards`;
+
+  // Search Drive for existing sheet with this user's name pattern
+  const searchPattern = `MMM - My Muscle Map - ${first}`;
+  const searchResp = await gsiDriveRequest(
+    `${DRIVE_API}/files?q=name+contains+'${encodeURIComponent(searchPattern)}'+and+mimeType='application/vnd.google-apps.spreadsheet'+and+trashed=false&fields=files(id,name)`,
+    'GET'
+  );
+  const files = searchResp?.files || [];
+  if (files.length > 0) {
+    // Use existing sheet — never create a duplicate
+    gsiSheetId = files[0].id;
+    localStorage.setItem('mmm_gsi_sheet_id', gsiSheetId);
+    gsiSyncIndicator('');
+    return gsiSheetId;
+  }
+
+  // Create new sheet with 3 tabs
+  const createResp = await gsiSheetsRequest(SHEETS_API, 'POST', {
+    properties: { title: sheetName },
+    sheets: [
+      { properties: { title: 'Profile',  sheetId: 0 } },
+      { properties: { title: 'Sessions', sheetId: 1 } },
+      { properties: { title: 'Metrics',  sheetId: 2 } },
+    ]
+  });
+
+  gsiSheetId = createResp?.spreadsheetId;
+  if (!gsiSheetId) { gsiSyncIndicator('Sheet creation failed'); return null; }
+  localStorage.setItem('mmm_gsi_sheet_id', gsiSheetId);
+
+  // Write headers
+  await gsiWriteHeaders();
+  gsiSyncIndicator('');
+  return gsiSheetId;
+}
+
+async function gsiWriteHeaders() {
+  const sid = gsiSheetId;
+  // Profile headers
+  await gsiSheetsRequest(`${SHEETS_API}/${sid}/values/Profile!A1:B1?valueInputOption=RAW`, 'PUT', {
+    values: [['Field', 'Value']]
+  });
+  // Sessions headers
+  await gsiSheetsRequest(`${SHEETS_API}/${sid}/values/Sessions!A1:N1?valueInputOption=RAW`, 'PUT', {
+    values: [['Session ID','Date','Exercise','Set Type','Weight (kg)','Reps','RIR','Adj 1RM (kg)','Weight at Session (kg)','Age at Session','Threshold Mult','Primary Muscle','Logged At','Correction Of']]
+  });
+  // Metrics headers
+  await gsiSheetsRequest(`${SHEETS_API}/${sid}/values/Metrics!A1:O1?valueInputOption=RAW`, 'PUT', {
+    values: [['Entry ID','Date','Weight','BMI','Body Fat %','Subdermal Fat %','Visceral Fat','Body Water %','Skeletal Muscle %','Bone Mass (kg)','Protein %','Muscle Mass (kg)','Fat Free BW (kg)','BMR (kcal)','Metabolic Age (yrs)']]
+  });
+}
+
+// ── Sync operations ───────────────────────────────────
+
+async function gsiSyncOnLoad() {
+  if (!gsiIsReady() || !gsiSheetId) return;
+  gsiSyncIndicator('Syncing…');
+  try {
+    await gsiPullAll();
+    gsiSyncIndicator('✓ Synced');
+    setTimeout(() => gsiSyncIndicator(''), 2000);
+  } catch(e) {
+    console.error('GSI sync on load failed:', e);
+    gsiSyncIndicator('Offline — local data');
+  }
+}
+
+async function gsiPullAll() {
+  const sid = gsiSheetId;
+
+  // Pull Sessions
+  const sessResp = await gsiSheetsRequest(`${SHEETS_API}/${sid}/values/Sessions!A2:N`, 'GET');
+  const sessRows = sessResp?.values || [];
+  if (sessRows.length > 0) {
+    // Rebuild sessions from sheet — group by session ID
+    const sessMap = {};
+    for (const row of sessRows) {
+      const [sessId, date, exerciseId, type, weight, reps, rir, adj1rm, weightAtSession, ageAtSession, thresholdMult, , loggedAt, correctionOf] = row;
+      if (correctionOf) continue; // skip correction rows for now — latest correction wins handled below
+      if (!sessMap[sessId]) {
+        sessMap[sessId] = { id: sessId, date, exerciseId, weightKgAtSession: parseFloat(weightAtSession)||null, ageAtSession: parseFloat(ageAtSession)||null, thresholdMult: parseFloat(thresholdMult)||null, sets: [] };
+      }
+      sessMap[sessId].sets.push({ type, weight: parseFloat(weight), reps: parseInt(reps), rir: parseInt(rir), adj1rm: parseFloat(adj1rm) });
+    }
+    // Merge with local — sheet is source of truth, local fills gaps
+    const sheetSessIds = new Set(Object.keys(sessMap));
+    const localOnly = state.sessions.filter(s => !sheetSessIds.has(s.id));
+    state.sessions = [...Object.values(sessMap), ...localOnly];
+  }
+
+  // Pull Metrics
+  const metResp = await gsiSheetsRequest(`${SHEETS_API}/${sid}/values/Metrics!A2:O`, 'GET');
+  const metRows = metResp?.values || [];
+  if (metRows.length > 0) {
+    const fields = ['weight','bmi','bodyfat','subdermal','visceral','water','skeletal','bone','protein','muscle','ffbw','bmr','metage'];
+    const sheetMetrics = metRows.map(row => {
+      const entry = { id: row[0], date: row[1] };
+      fields.forEach((f, i) => { entry[f] = row[i+2] !== '' && row[i+2] !== undefined ? parseFloat(row[i+2]) : null; });
+      return entry;
+    });
+    const sheetMetIds = new Set(sheetMetrics.map(m => m.id));
+    const localOnlyMet = state.metrics.filter(m => !sheetMetIds.has(m.id));
+    state.metrics = [...sheetMetrics, ...localOnlyMet];
+  }
+
+  saveState();
+  renderSVGs();
+  renderOverview();
+  if (selectedMuscle) renderDetail();
+  renderMetrics();
+}
+
+async function gsiPushAll() {
+  if (!gsiIsReady()) return;
+  await gsiEnsureSheet();
+  if (!gsiSheetId) return;
+  gsiSyncIndicator('Saving…');
+  try {
+    await gsiPushProfile();
+    await gsiPushSessions();
+    await gsiPushMetrics();
+    gsiSyncIndicator('✓ Saved');
+    setTimeout(() => gsiSyncIndicator(''), 2000);
+  } catch(e) {
+    console.error('GSI push failed:', e);
+    gsiSyncIndicator('Save failed — stored locally');
+  }
+}
+
+async function gsiPushProfile() {
+  const s = state.settings;
+  const rows = [
+    ['Field', 'Value', 'Last Updated'],
+    ['Name',        s.name || '',       s._ts?.name       || ''],
+    ['Sex',         s.sex  || '',       s._ts?.sex        || ''],
+    ['DOB Mode',    s.dobMode || '',    ''],
+    ['DOB',         s.dob  || '',       s._ts?.dob        || ''],
+    ['Age Manual',  s.ageManual || '',  s._ts?.ageManual  || ''],
+    ['Height (cm)', s.heightCm || '',   s._ts?.heightCm   || ''],
+    ['Weight (kg)', s.weightKg || '',   s._ts?.weightKg   || ''],
+    ['Height Unit', s.heightUnit || '', ''],
+    ['Weight Unit', s.weightUnit || '', ''],
+  ];
+  await gsiSheetsRequest(`${SHEETS_API}/${gsiSheetId}/values/Profile!A1:C${rows.length}?valueInputOption=RAW`, 'PUT', { values: rows });
+}
+
+async function gsiPushSessions() {
+  if (state.sessions.length === 0) return;
+  const rows = [];
+  for (const sess of state.sessions) {
+    const ex = EXERCISES.find(e => e.id === sess.exerciseId);
+    for (const set of sess.sets) {
+      rows.push([
+        sess.id,
+        sess.date,
+        sess.exerciseId,
+        set.type,
+        set.weight,
+        set.reps,
+        set.rir,
+        set.adj1rm?.toFixed(2) || '',
+        sess.weightKgAtSession || '',
+        sess.ageAtSession      || '',
+        sess.thresholdMult     || '',
+        ex?.primaryMuscle      || '',
+        new Date().toISOString(),
+        '', // correctionOf
+      ]);
+    }
+  }
+  // Clear and rewrite (simpler than diffing)
+  await gsiSheetsRequest(`${SHEETS_API}/${gsiSheetId}/values/Sessions!A2:N?valueInputOption=RAW`, 'PUT', {
+    values: rows
+  });
+}
+
+async function gsiPushMetrics() {
+  if (state.metrics.length === 0) return;
+  const fields = ['weight','bmi','bodyfat','subdermal','visceral','water','skeletal','bone','protein','muscle','ffbw','bmr','metage'];
+  const rows = state.metrics.map(m => [
+    m.id, m.date,
+    ...fields.map(f => m[f] != null ? m[f] : '')
+  ]);
+  await gsiSheetsRequest(`${SHEETS_API}/${gsiSheetId}/values/Metrics!A2:O?valueInputOption=RAW`, 'PUT', {
+    values: rows
+  });
+}
+
+// ── API helpers ───────────────────────────────────────
+
+async function gsiSheetsRequest(url, method, body) {
+  const opts = {
+    method,
+    headers: { 'Authorization': `Bearer ${gsiAccessToken}`, 'Content-Type': 'application/json' },
+  };
+  if (body && method !== 'GET') opts.body = JSON.stringify(body);
+  const resp = await fetch(url, opts);
+  if (!resp.ok) {
+    const err = await resp.text();
+    console.error('Sheets API error:', resp.status, err);
+    return null;
+  }
+  return method === 'GET' || method === 'PUT' ? resp.json() : resp.json();
+}
+
+async function gsiDriveRequest(url, method, body) {
+  const opts = {
+    method,
+    headers: { 'Authorization': `Bearer ${gsiAccessToken}`, 'Content-Type': 'application/json' },
+  };
+  if (body) opts.body = JSON.stringify(body);
+  const resp = await fetch(url, opts);
+  if (!resp.ok) { console.error('Drive API error:', resp.status); return null; }
+  return resp.json();
+}
+
+// ── Hook into existing save operations ────────────────
+
+// Wrap saveState to also push to Sheets when signed in
+const _origSaveState = saveState;
+window.saveState = function() {
+  _origSaveState();
+  if (gsiIsReady()) {
+    gsiPushAll().catch(e => console.error('Background sync failed:', e));
+  }
+};
 
 init();
 </script>

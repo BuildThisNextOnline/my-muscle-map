@@ -19,6 +19,8 @@ You log exercises set by set, and the body map colours each muscle from grey (no
 - Click any muscle to see its exercises, 1RM history chart, and all logged sets
 - Hover tooltip showing muscle name, current level, and best 1RM
 
+---
+
 ## Profile Setup
 On first launch you'll set up your profile:
 - **Name** and **biological sex** (used for threshold multiplier)
@@ -38,11 +40,15 @@ Instead of always training to failure, you log how many reps you had left in res
 
 Target sets should land at 0–2 RIR. The app adjusts your 1RM estimate upward for sets with RIR remaining.
 
+---
+
 ## Workout Logging
 - Choose exercise by muscle group or by exercise name (both directions work)
 - Log sets one at a time: Type (warm-up / target) · Weight · Reps · RIR (0–4+)
 - Edit or delete any set after saving
 - End session commits everything and updates the body map instantly
+
+---
 
 ## Strength Scoring
 - **Adjusted Epley 1RM** — `weight × (1 + reps/30) × (1 + RIR/30)` — accounts for how close you were to failure
@@ -50,6 +56,8 @@ Target sets should land at 0–2 RIR. The app adjusts your 1RM estimate upward f
   - **Sex** — female multiplier: 0.65×
   - **Age bracket** — peak at 25–34, scaling down to 0.68× at 65+
 - **Historical accuracy** — each session snapshots your weight and age at that point in time, so past scores never retroactively change
+
+---
 
 ## Muscle Groups (24)
 **Upper Body**
@@ -82,15 +90,36 @@ Log your full body composition data by date (weight, BMI, body fat %, muscle mas
 
 ---
 
-## Data & Privacy
-All data is stored in your browser's `localStorage`. Nothing is sent to any server. Data persists until you clear your browser data.
+## Google Sign-In & Cross-Device Sync
+MMM optionally syncs your data across all your devices via Google Sheets.
 
-**Important:** localStorage is per-device, per-browser. Data logged on your laptop will not appear on your phone, and vice versa.
+- Click **Sign in with Google** in the top right
+- On first sign-in, the app creates a Google Spreadsheet called **MMM - My Muscle Map - [Your Name] - [Date] onwards** in your own Google Drive
+- All your sessions, metrics, and profile are written to that sheet automatically after every save
+- On any other device, sign in with the same Google account — the app finds your existing sheet and pulls your data in
+- The app uses `drive.file` scope only, meaning it can access solely the file it created — nothing else in your Drive
+
+**The creator of MMM cannot see your data.** Your sheet lives in your Google Drive. No server, no database, no third-party access.
+
+If you're offline, data saves locally and syncs the next time you're connected.
+
+---
+
+## Data & Privacy
+By default, all data is stored in your browser's `localStorage` on your device — nothing is sent anywhere.
+
+If you sign in with Google, your data additionally syncs to a spreadsheet in your own Google Drive, giving you cross-device access.
+
+**localStorage is per-device, per-browser.** Without Google Sign-In, data logged on your laptop will not appear on your phone.
+
+For full details see the [Privacy Policy](https://buildthisnextonline.github.io/my-muscle-map/privacy-policy.html).
 
 ---
 
 ## Tech
 Single self-contained HTML file. No framework, no build step, no backend. SVG polygon data sourced from [body-highlighter](https://github.com/NathanaelA/body-highlighter) (MIT licence), with hand-crafted splits for sub-muscle regions.
+
+Google Sign-In via [Google Identity Services](https://developers.google.com/identity/gsi/web) — `drive.file` scope only.
 
 Analytics via [GoatCounter](https://www.goatcounter.com) — privacy-friendly, no cookies.
 
