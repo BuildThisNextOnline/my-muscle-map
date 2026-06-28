@@ -1,8 +1,8 @@
-# My Muscle Map (MMM)
+# My Muscle Map (MMM) — v1.0
 
 **Track your strength across 24 muscle groups — calibrated to your age, sex, and bodyweight.**
 
-Live at → [buildthisnextonline.github.io/my-muscle-map](https://buildthisnextonline.github.io/my-muscle-map)
+Live at → [mmm.buildthisnext.online](https://mmm.buildthisnext.online)
 
 ---
 
@@ -28,7 +28,7 @@ On first launch you'll set up your profile:
 - **Weight** — kg or lbs (your choice, per field)
 - **Height** — cm or ft/in with half-inch increments
 
-All fields editable anytime via the ⚙ Settings button.
+All fields editable anytime via the ⚙ Profile button.
 
 ---
 
@@ -112,7 +112,7 @@ If you sign in with Google, your data additionally syncs to a spreadsheet in you
 
 **localStorage is per-device, per-browser.** Without Google Sign-In, data logged on your laptop will not appear on your phone.
 
-For full details see the [Privacy Policy](https://buildthisnextonline.github.io/my-muscle-map/privacy-policy.html).
+For full details see the [Privacy Policy](https://mmm.buildthisnext.online/privacy-policy.html).
 
 ---
 
