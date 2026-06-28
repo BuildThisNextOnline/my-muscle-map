@@ -101,6 +101,8 @@ MMM optionally syncs your data across all your devices via Google Sheets.
 
 **The creator of MMM cannot see your data.** Your sheet lives in your Google Drive. No server, no database, no third-party access.
 
+When you sign in with Google, your email address is stored by Build This Next in a private registry to inform you of future tools and offerings. You may opt out at any time by emailing [privacy@buildthisnext.online](mailto:privacy@buildthisnext.online).
+
 If you're offline, data saves locally and syncs the next time you're connected.
 
 ---
@@ -112,7 +114,7 @@ If you sign in with Google, your data additionally syncs to a spreadsheet in you
 
 **localStorage is per-device, per-browser.** Without Google Sign-In, data logged on your laptop will not appear on your phone.
 
-For full details see the [Privacy Policy](https://mmm.buildthisnext.online/privacy-policy.html).
+For full details see the [Privacy Policy](https://mmm.buildthisnext.online/privacy-policy.html) and [Terms of Service](https://mmm.buildthisnext.online/terms.html).
 
 ---
 

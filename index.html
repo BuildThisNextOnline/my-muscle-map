@@ -3343,15 +3343,17 @@ function gsiGetOrCreateUUID() {
   return uuid;
 }
 
-async function gsiRegisterUser(event = 'signin') {
+async function gsiRegisterUser(event = 'signin', email = null) {
   const uuid = gsiGetOrCreateUUID();
   const isFirstSignIn = !localStorage.getItem('mmm_registered');
+  // Restore email from localStorage if not passed
+  if (!email) email = localStorage.getItem('mmm_gsi_email') || null;
   try {
     const resp = await fetch(MMM_REGISTRY_URL, {
       method: 'POST',
       redirect: 'follow',
       headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify({ uuid, event: isFirstSignIn ? 'first_signin' : event }),
+      body: JSON.stringify({ uuid, event: isFirstSignIn ? 'first_signin' : event, email }),
     });
     const text = await resp.text();
     console.log('Registry response:', text);
@@ -3373,16 +3375,19 @@ function gsiSignIn() {
       localStorage.setItem('mmm_gsi_token',  gsiAccessToken);
       localStorage.setItem('mmm_gsi_expiry', gsiTokenExpiry);
 
-      // Get user name from token info
+      // Get user name and email from token info
+      let gsiUserEmail = null;
       try {
         const info = await fetch(`https://www.googleapis.com/oauth2/v3/tokeninfo?access_token=${gsiAccessToken}`);
         const d    = await info.json();
-        gsiUserName = d.name || d.email || 'User';
+        gsiUserName  = d.name || d.email || 'User';
+        gsiUserEmail = d.email || null;
         localStorage.setItem('mmm_gsi_user', gsiUserName);
+        if (gsiUserEmail) localStorage.setItem('mmm_gsi_email', gsiUserEmail);
       } catch(e) { gsiUserName = 'User'; }
 
-      // Register anonymous UUID with user registry (fire and forget)
-      gsiRegisterUser('signin');
+      // Register UUID + email with user registry
+      gsiRegisterUser('signin', gsiUserEmail);
 
       gsiUpdateUI(true);
       await gsiEnsureSheet();
