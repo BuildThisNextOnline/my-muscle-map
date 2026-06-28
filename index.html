@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>My Muscle Map — MMM</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 80'><rect width='100' height='80' fill='%230a0a0f'/><polyline points='5,70 18,15 31,70 44,15 55,70' fill='none' stroke='%236c63ff' stroke-width='4' stroke-linejoin='miter'/><polyline points='45,70 58,15 71,70 84,15 95,70' fill='none' stroke='%236c63ff' stroke-width='4' stroke-linejoin='miter'/><polyline points='25,65 35,22 47,65 59,22 71,65' fill='none' stroke='%231abc9c' stroke-width='4' stroke-linejoin='miter'/></svg>">
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:wght@300;400;500&display=swap');
 
@@ -911,7 +912,7 @@ header {
 <body>
 
 <header>
-  <div class="logo">My Muscle <span>Map</span></div>
+  <div class="logo"><img src="MMM_logo.png" alt="My Muscle Map" style="height:36px;width:auto;display:block"></div>
   <div class="header-tabs">
     <button class="header-tab active" onclick="showPage('map')">Body Map</button>
     <button class="header-tab" onclick="showPage('log')">Log Session</button>
@@ -924,7 +925,7 @@ header {
       <button id="gsi-signout-btn" class="btn btn-ghost btn-sm" onclick="gsiSignOut()" style="display:none;font-size:11px">Sign out</button>
       <span id="gsi-sync-indicator" style="font-size:10px;font-family:var(--mono);color:var(--text-dimmer);display:none"></span>
     </div>
-    <button class="btn btn-ghost btn-sm" onclick="openSettingsModal()">⚙ Settings</button>
+    <button class="btn btn-ghost btn-sm" onclick="openSettingsModal()">⚙ Profile</button>
   </div>
 </header>
 
@@ -1140,10 +1141,10 @@ header {
 <div class="modal-overlay hidden" id="profile-gate-overlay" style="z-index:200">
   <div class="modal" style="max-width:480px">
     <div class="modal-title" style="font-size:17px; font-weight:800">
-      Welcome to My Muscle Map
+      Profile
     </div>
     <div style="font-size:11px; color:var(--text-dim); font-family:var(--mono); margin-top:-6px">
-      Quick setup — calibrates strength levels to your demographics.
+      Complete your profile to start logging sessions. Calibrates strength levels to your demographics.
     </div>
 
     <!-- Name -->
@@ -1242,7 +1243,7 @@ header {
 <div class="modal-overlay hidden" id="settings-modal">
   <div class="modal">
     <div class="modal-title">
-      Profile &amp; Settings
+      Profile
       <button class="modal-close" onclick="closeModal('settings-modal')">✕</button>
     </div>
 
@@ -2688,13 +2689,13 @@ function isProfileComplete() {
 }
 
 function checkProfileGate() {
+  // Gate only triggers when navigating to Log Session
+  // Never blocks on load or other tabs
   const overlay = document.getElementById('profile-gate-overlay');
   if (!isProfileComplete()) {
     overlay.classList.remove('hidden');
-    // Prevent clicking outside to dismiss when profile incomplete
+    // Prevent clicking outside to dismiss when on Log Session
     overlay.onclick = null;
-  } else {
-    overlay.classList.add('hidden');
   }
 }
 
@@ -2887,6 +2888,11 @@ function saveSettings() {
 // ═══════════════════════════════════════════════════════
 
 function showPage(name) {
+  // Gate Log Session tab if profile incomplete
+  if (name === 'log' && !isProfileComplete()) {
+    checkProfileGate();
+    return;
+  }
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.header-tab').forEach(t => t.classList.remove('active'));
   document.getElementById('page-'+name).classList.add('active');
@@ -2930,7 +2936,6 @@ function init() {
   renderSVGs();
   renderOverview();
   renderDetail();
-  checkProfileGate();
   // Show sign-in button and init Google auth after page load
   window.addEventListener('load', () => {
     document.getElementById('gsi-signin-btn').style.display = '';
