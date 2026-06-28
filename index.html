@@ -49,7 +49,7 @@ header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 24px;
+  padding: 8px 24px;
   border-bottom: 1px solid var(--border);
   background: var(--surface);
   flex-shrink: 0;
@@ -1070,7 +1070,7 @@ header {
 <body>
 
 <header>
-  <div class="logo"><img src="MMM_logo.png" alt="My Muscle Map" style="height:36px;width:auto;display:block"></div>
+  <div class="logo"><img src="MMM_logo.png" alt="My Muscle Map" style="height:80px;width:auto;display:block"></div>
   <div class="header-tabs">
     <button class="header-tab active" onclick="showPage('map')">Body Map</button>
     <button class="header-tab" onclick="showPage('log')">Log Session</button>
@@ -1356,6 +1356,7 @@ header {
   <div class="modal" style="max-width:480px">
     <div class="modal-title" style="font-size:17px; font-weight:800">
       Profile
+      <button class="modal-close" onclick="closeModal('profile-gate-overlay')">✕</button>
     </div>
     <div style="font-size:11px; color:var(--text-dim); font-family:var(--mono); margin-top:-6px">
       Complete your profile to start logging sessions. Calibrates strength levels to your demographics.
@@ -2300,14 +2301,17 @@ function selectMuscle(muscleId) {
 }
 
 function renderDetail() {
+  const emptyEl   = document.getElementById('detail-empty');
+  const contentEl = document.getElementById('detail-content');
+  if (!emptyEl || !contentEl) return; // not in DOM on mobile
   const muscle = MUSCLES.find(m => m.id === selectedMuscle);
   if (!muscle) {
-    document.getElementById('detail-empty').style.display = 'flex';
-    document.getElementById('detail-content').style.display = 'none';
+    emptyEl.style.display   = 'flex';
+    contentEl.style.display = 'none';
     return;
   }
-  document.getElementById('detail-empty').style.display = 'none';
-  document.getElementById('detail-content').style.display = 'flex';
+  emptyEl.style.display   = 'none';
+  contentEl.style.display = 'flex';
 
   document.getElementById('detail-name').textContent  = muscle.name;
   document.getElementById('detail-group').textContent = muscle.group;
@@ -2567,6 +2571,7 @@ document.addEventListener('input', e => {
 });
 
 function saveSet() {
+  if (!isProfileComplete()) { checkProfileGate(); return; }
   const exId = document.getElementById('log-exercise-select').value;
   if (!exId) { alert('Please select an exercise first.'); return; }
   const type   = document.getElementById('set-type').value;
@@ -2577,7 +2582,6 @@ function saveSet() {
   const adj = adjusted1RM(weight, reps, rir);
   sessionSets.push({ type, weight, reps, rir, adj1rm: adj });
   renderSessionSets();
-  // Clear inputs
   document.getElementById('set-weight').value = '';
   document.getElementById('set-reps').value   = '';
   currentRIR = null;
@@ -2652,11 +2656,11 @@ function saveEditSet() {
 }
 
 function endSession() {
+  if (!isProfileComplete()) { checkProfileGate(); return; }
   const exId = document.getElementById('log-exercise-select').value;
   if (!exId) { alert('Please select an exercise.'); return; }
   if (sessionSets.length === 0) { alert('No sets logged.'); return; }
   const date = document.getElementById('log-date').value || todayStr();
-  // Snapshot demographic data at time of session
   const weightKgAtSession   = getWeightKgOn(date);
   const ageAtSession        = getAgeOn(date);
   const thresholdMult       = getThresholdMultiplier(date);
@@ -3234,8 +3238,6 @@ function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
 
 document.querySelectorAll('.modal-overlay').forEach(o => {
   o.addEventListener('click', e => {
-    // Never allow clicking outside to close the profile gate
-    if (o.id === 'profile-gate-overlay') return;
     if (e.target === o) o.classList.add('hidden');
   });
 });
@@ -3261,7 +3263,8 @@ function init() {
   renderDetail();
   // Show sign-in button and init Google auth after page load
   window.addEventListener('load', () => {
-    document.getElementById('gsi-signin-btn').style.display = '';
+    const btn = document.getElementById('gsi-signin-btn');
+    if (btn) btn.style.display = '';
     gsiInit();
   });
 }
@@ -3378,14 +3381,18 @@ function gsiSignOut() {
 }
 
 function gsiUpdateUI(signedIn) {
-  document.getElementById('gsi-signin-btn').style.display  = signedIn ? 'none'  : '';
-  document.getElementById('gsi-signout-btn').style.display = signedIn ? ''      : 'none';
-  const label = document.getElementById('gsi-user-label');
-  if (signedIn && gsiUserName) {
-    label.textContent = gsiUserName;
-    label.style.display = '';
-  } else {
-    label.style.display = 'none';
+  const signinBtn  = document.getElementById('gsi-signin-btn');
+  const signoutBtn = document.getElementById('gsi-signout-btn');
+  const label      = document.getElementById('gsi-user-label');
+  if (signinBtn)  signinBtn.style.display  = signedIn ? 'none' : '';
+  if (signoutBtn) signoutBtn.style.display = signedIn ? '' : 'none';
+  if (label) {
+    if (signedIn && gsiUserName) {
+      label.textContent = gsiUserName;
+      label.style.display = '';
+    } else {
+      label.style.display = 'none';
+    }
   }
 }
 
