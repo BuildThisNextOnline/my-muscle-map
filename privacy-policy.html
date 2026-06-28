@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Privacy Policy — My Muscle Map</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: #0a0a0f;
+    color: #e8e8f0;
+    line-height: 1.7;
+    padding: 40px 20px;
+  }
+  .container {
+    max-width: 720px;
+    margin: 0 auto;
+  }
+  h1 {
+    font-size: 28px;
+    font-weight: 800;
+    margin-bottom: 6px;
+    color: #e8e8f0;
+  }
+  .subtitle {
+    font-size: 13px;
+    color: #7a7a9a;
+    margin-bottom: 40px;
+    font-family: 'Courier New', monospace;
+  }
+  h2 {
+    font-size: 16px;
+    font-weight: 700;
+    margin: 32px 0 10px;
+    color: #6c63ff;
+  }
+  p {
+    font-size: 14px;
+    color: #c0c0d8;
+    margin-bottom: 12px;
+  }
+  ul {
+    margin: 8px 0 12px 20px;
+    font-size: 14px;
+    color: #c0c0d8;
+  }
+  li { margin-bottom: 6px; }
+  a { color: #6c63ff; text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  .back {
+    display: inline-block;
+    margin-bottom: 32px;
+    font-size: 13px;
+    color: #7a7a9a;
+    font-family: 'Courier New', monospace;
+  }
+  .updated {
+    margin-top: 48px;
+    font-size: 12px;
+    color: #3a3a5a;
+    font-family: 'Courier New', monospace;
+  }
+  hr {
+    border: none;
+    border-top: 1px solid #1a1a26;
+    margin: 32px 0;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <a class="back" href="/">← Back to My Muscle Map</a>
+
+  <h1>Privacy Policy</h1>
+  <div class="subtitle">My Muscle Map (MMM) · buildthisnextonline.github.io/my-muscle-map</div>
+
+  <p>My Muscle Map is a strength tracking tool built by <a href="https://github.com/BuildThisNextOnline">BuildThisNextOnline</a>. This policy explains what data the app collects, how it is stored, and how it is used.</p>
+
+  <hr>
+
+  <h2>The creator cannot see your data</h2>
+  <p>The creator of My Muscle Map has no access to any data you enter into the app. This is by design:</p>
+  <ul>
+    <li>All statistics and insights shown in My Muscle Map are generated using only the data you have entered yourself</li>
+    <li>Data stored in your browser's localStorage lives entirely on your own device — no one, including the creator, can access it remotely</li>
+    <li>Data stored in Google Drive is saved to a spreadsheet in <strong>your own Google Drive account</strong> — the creator has no server, no database, and no mechanism to access it</li>
+    <li>The app has no backend — there is no server that receives, processes, or stores your information</li>
+  </ul>
+  <p>Your body metrics, workout history, and personal profile are yours alone.</p>
+
+  <hr>
+
+  <h2>What data the app collects</h2>
+  <p>My Muscle Map collects only the data you choose to enter:</p>
+  <ul>
+    <li>Your name, biological sex, date of birth or age, height, and bodyweight — entered during profile setup</li>
+    <li>Workout sessions — exercise name, set type, weight, reps, RIR, and computed strength scores</li>
+    <li>Body metrics — weight, BMI, body fat percentage, and other optional scale measurements you choose to log</li>
+  </ul>
+  <p>The app does not collect any data automatically. No usage analytics, no crash reports, no device identifiers, and no location data are collected.</p>
+
+  <hr>
+
+  <h2>How your data is stored</h2>
+  <p>By default, all data is stored locally in your browser's <strong>localStorage</strong> on your device. Nothing is sent to any server by default.</p>
+  <p>If you choose to sign in with Google, the app additionally stores your data in a Google Spreadsheet created in <strong>your own Google Drive</strong>. This enables cross-device sync — your data on your phone and laptop stays in sync through your own Google account.</p>
+  <p>The app requests only the <strong>drive.file</strong> scope, which means it can only access files it has created itself. It cannot read, modify, or delete any other files in your Google Drive.</p>
+
+  <hr>
+
+  <h2>Google account access</h2>
+  <p>When you sign in with Google, the app:</p>
+  <ul>
+    <li>Reads your name from your Google account solely to label your spreadsheet</li>
+    <li>Creates one Google Spreadsheet in your Drive named <em>MMM - My Muscle Map - [Your Name] - [Date] onwards</em></li>
+    <li>Reads from and writes to that spreadsheet to sync your workout and body metrics data across your devices</li>
+  </ul>
+  <p>Your email address is used by Google to authenticate you but is not stored by, transmitted to, or accessible to the app or its creator. The creator of My Muscle Map cannot see your email address, your name, or any data in your spreadsheet.</p>
+  <p>The app does not access your Gmail, Google Calendar, Google Photos, or any other Google service. It does not share your data with any third party.</p>
+  <p>You can revoke the app's access to your Google account at any time by visiting <a href="https://myaccount.google.com/permissions" target="_blank">myaccount.google.com/permissions</a> and removing My Muscle Map.</p>
+
+  <hr>
+
+  <h2>Data sharing</h2>
+  <p>Your data is never sold, shared, or transmitted to any third party. It lives either in your browser's localStorage or in your own Google Drive — both of which are under your control.</p>
+
+  <hr>
+
+  <h2>Data deletion</h2>
+  <p>To delete your locally stored data, clear your browser's site data for this domain.</p>
+  <p>To delete your Google Sheets data, simply delete the spreadsheet from your Google Drive. To revoke the app's Google access, visit <a href="https://myaccount.google.com/permissions" target="_blank">myaccount.google.com/permissions</a>.</p>
+
+  <hr>
+
+  <h2>Anonymous user counting</h2>
+  <p>When you sign in with Google, the app generates a random anonymous identifier (UUID) and records it — along with the date — in a registry maintained by BuildThisNextOnline. This is used solely to count how many distinct users have signed in to My Muscle Map.</p>
+  <p>This UUID is randomly generated and contains no personal information. It is not linked to your name, email address, Google account, or any data you have entered. It cannot be used to identify you.</p>
+  <p>The UUID is stored in your browser's localStorage under the key <code>mmm_uuid</code>. You can clear it at any time by clearing your browser's site data.</p>
+
+  <hr>
+
+
+  <p>This app uses <a href="https://www.goatcounter.com" target="_blank">GoatCounter</a> for privacy-friendly, cookie-free page view analytics. GoatCounter does not track individuals, does not use cookies, and does not collect personal information. Only aggregate page view counts are recorded.</p>
+
+  <hr>
+
+  <h2>Children's privacy</h2>
+  <p>This app is not directed at children under 13. We do not knowingly collect data from children under 13.</p>
+
+  <hr>
+
+  <h2>Changes to this policy</h2>
+  <p>If this policy changes materially, the updated date below will reflect the change. Continued use of the app after a policy change constitutes acceptance of the updated policy.</p>
+
+  <hr>
+
+  <h2>Contact</h2>
+  <p>Questions about this privacy policy can be directed to the BuildThisNextOnline GitHub organisation: <a href="https://github.com/BuildThisNextOnline" target="_blank">github.com/BuildThisNextOnline</a>.</p>
+
+  <div class="updated">Last updated: 25 Jun 2026</div>
+
+</div>
+</body>
+</html>
