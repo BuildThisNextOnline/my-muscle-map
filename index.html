@@ -783,6 +783,164 @@ header {
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--surface3); border-radius: 3px; }
 
+/* ── BOTTOM SHEET (mobile muscle detail) ── */
+.bottom-sheet-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 60;
+  backdrop-filter: blur(2px);
+}
+.bottom-sheet {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--surface);
+  border-radius: 16px 16px 0 0;
+  border-top: 1px solid var(--border);
+  max-height: 70vh;
+  display: flex;
+  flex-direction: column;
+  z-index: 61;
+  transform: translateY(100%);
+  transition: transform 0.3s ease;
+}
+.bottom-sheet.open { transform: translateY(0); }
+.bottom-sheet-handle {
+  width: 40px;
+  height: 4px;
+  background: var(--border);
+  border-radius: 2px;
+  margin: 12px auto 8px;
+  flex-shrink: 0;
+}
+.bottom-sheet-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 16px 80px;
+}
+
+/* ── BOTTOM NAV (mobile only) ── */
+.bottom-nav {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  z-index: 50;
+}
+.bottom-nav-items {
+  display: flex;
+  align-items: stretch;
+}
+.bottom-nav-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 10px 4px 14px;
+  border: none;
+  background: transparent;
+  color: var(--text-dimmer);
+  font-family: var(--sans);
+  font-size: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color 0.15s;
+  letter-spacing: 0.3px;
+}
+.bottom-nav-item.active { color: var(--accent); }
+.bottom-nav-item svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+
+/* ── MOBILE RESPONSIVE ── */
+@media (max-width: 768px) {
+
+  body { overflow: hidden; }
+
+  header { padding: 10px 16px; }
+  .header-tabs { display: none; }
+  .header-right { gap: 6px; }
+  .header-right .btn { font-size: 11px; padding: 5px 10px; }
+  #gsi-user-label { display: none !important; }
+
+  .main { overflow: hidden; }
+  .page.active { overflow-y: auto; padding-bottom: 60px; }
+
+  .bottom-nav { display: block; }
+
+  #page-map { flex-direction: column; overflow-y: auto; }
+
+  .body-panel {
+    flex: none;
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    overflow: visible;
+  }
+
+  .body-panel-header { padding: 10px 14px 8px; }
+
+  .overview-grid {
+    display: flex;
+    overflow-x: auto;
+    gap: 12px;
+    padding: 8px 14px;
+    border-bottom: 1px solid var(--border);
+    -webkit-overflow-scrolling: touch;
+  }
+  .overview-cell { flex-shrink: 0; }
+
+  .body-svgs {
+    flex-direction: column;
+    padding: 12px;
+    gap: 16px;
+    overflow: visible;
+    height: auto;
+  }
+  .svg-wrap { width: 100%; height: auto; }
+  .svg-wrap svg { height: auto; max-height: none; }
+
+  .detail-panel { display: none; }
+
+  .log-container { padding: 16px 14px 80px; }
+  .form-row { flex-direction: column; gap: 10px; }
+  .form-group { min-width: 0; }
+  .inline-form-row { flex-wrap: wrap; }
+
+  .metrics-container { padding: 16px 14px 80px; }
+  .metrics-grid { grid-template-columns: repeat(2, 1fr); }
+
+  .modal-overlay { align-items: flex-end; }
+  .modal {
+    width: 100%;
+    max-width: 100%;
+    max-height: 90vh;
+    border-radius: 16px 16px 0 0;
+    padding: 20px 16px 32px;
+  }
+
+  #profile-gate-overlay { align-items: flex-end; }
+  #profile-gate-overlay .modal {
+    width: 100%;
+    max-width: 100%;
+    max-height: 92vh;
+    border-radius: 16px 16px 0 0;
+  }
+
+  .rir-btn { padding: 10px 0; font-size: 14px; }
+  .set-row { flex-wrap: wrap; gap: 6px; }
+  .form-input, .form-select { font-size: 16px; padding: 11px 14px; }
+  .form-input-sm { font-size: 16px; padding: 10px; }
+}
+
+
+
 /* tabs in detail */
 .detail-tabs {
   display: flex;
@@ -936,7 +1094,6 @@ header {
 
     <div class="body-panel">
       <div class="body-panel-header">
-        <h3>My Muscle Map</h3>
         <div class="legend">
           <div class="legend-item"><div class="legend-dot" style="background:var(--c-none)"></div>No data</div>
           <div class="legend-item"><div class="legend-dot" style="background:var(--c-beginner)"></div>Beginner</div>
@@ -1134,8 +1291,65 @@ header {
 
 </div>
 
-<!-- Tooltip -->
-<div class="svg-tooltip" id="svg-tooltip"></div>
+<!-- Bottom Navigation (mobile only) -->
+<nav class="bottom-nav">
+  <div class="bottom-nav-items">
+    <button class="bottom-nav-item active" onclick="showPage('map')" id="bnav-map">
+      <svg viewBox="0 0 24 24"><path d="M12 2C8 2 5 5.5 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.5-3-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
+      Body Map
+    </button>
+    <button class="bottom-nav-item" onclick="showPage('log')" id="bnav-log">
+      <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+      Log Session
+    </button>
+    <button class="bottom-nav-item" onclick="showPage('metrics')" id="bnav-metrics">
+      <svg viewBox="0 0 24 24"><path d="M3 18l4-8 4 6 4-4 4 6"/></svg>
+      Body Metrics
+    </button>
+    <button class="bottom-nav-item" onclick="openSettingsModal()" id="bnav-profile">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+      Profile
+    </button>
+  </div>
+</nav>
+
+<!-- Bottom Sheet (mobile muscle detail) -->
+<div class="bottom-sheet-overlay" id="bottom-sheet-overlay" onclick="closeBottomSheet()"></div>
+<div class="bottom-sheet" id="bottom-sheet">
+  <div class="bottom-sheet-handle"></div>
+  <div class="bottom-sheet-content">
+    <div class="detail-header" id="bs-detail-header" style="padding:0 0 12px">
+      <div>
+        <div class="detail-muscle-name" id="bs-detail-name">—</div>
+        <div class="detail-muscle-group" id="bs-detail-group">—</div>
+      </div>
+      <div class="detail-score-badge">
+        <div class="score-level" id="bs-detail-level-badge">—</div>
+        <div class="score-1rm" id="bs-detail-1rm"></div>
+      </div>
+    </div>
+    <div class="detail-tabs">
+      <button class="detail-tab active" onclick="switchBSTab('exercises',this)">Exercises</button>
+      <button class="detail-tab" onclick="switchBSTab('history',this)">History</button>
+      <button class="detail-tab" onclick="switchBSTab('sessions',this)">All Sets</button>
+    </div>
+    <div style="padding-top:12px">
+      <div class="tab-pane active" id="bs-tab-exercises"></div>
+      <div class="tab-pane" id="bs-tab-history">
+        <div class="section-title">1RM Over Time</div>
+        <div class="chart-container">
+          <div class="chart-area"><svg id="bs-history-chart-svg"></svg></div>
+        </div>
+      </div>
+      <div class="tab-pane" id="bs-tab-sessions">
+        <div class="section-title">All Logged Sets</div>
+        <div id="bs-sessions-container"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
 
 <!-- Profile Gate Overlay — shown on first launch until profile complete -->
 <div class="modal-overlay hidden" id="profile-gate-overlay" style="z-index:200">
@@ -2074,11 +2288,15 @@ function renderOverview() {
 // ═══════════════════════════════════════════════════════
 
 function selectMuscle(muscleId) {
-  // Toggle off if clicking the already-selected muscle
   selectedMuscle = selectedMuscle === muscleId ? null : muscleId;
   selectedExercise = null;
   renderSVGs();
-  renderDetail();
+  if (isMobile()) {
+    if (selectedMuscle) openBottomSheet(selectedMuscle);
+    else closeBottomSheet();
+  } else {
+    renderDetail();
+  }
 }
 
 function renderDetail() {
@@ -2884,21 +3102,126 @@ function saveSettings() {
 
 
 // ═══════════════════════════════════════════════════════
-// NAVIGATION
+// BOTTOM SHEET (mobile muscle detail)
 // ═══════════════════════════════════════════════════════
 
+function isMobile() {
+  return window.innerWidth <= 768;
+}
+
+function openBottomSheet(muscleId) {
+  const muscle = MUSCLES.find(m => m.id === muscleId);
+  if (!muscle) return;
+
+  const level = getMuscleLevel(muscleId);
+  const best  = getBest1RM(muscleId);
+
+  document.getElementById('bs-detail-name').textContent  = muscle.name;
+  document.getElementById('bs-detail-group').textContent = muscle.group;
+
+  const badge = document.getElementById('bs-detail-level-badge');
+  badge.textContent = LEVEL_NAMES[level];
+  badge.style.background = LEVEL_COLORS[level];
+  badge.style.color = level <= 2 ? 'white' : level === 3 ? '#111' : 'white';
+
+  document.getElementById('bs-detail-1rm').textContent = best
+    ? `Best 1RM: ${best.toFixed(1)} kg`
+    : 'No data yet';
+
+  // Populate exercises tab
+  const exs = EXERCISES.filter(e => e.primaryMuscle === muscleId);
+  const exContainer = document.getElementById('bs-tab-exercises');
+  exContainer.innerHTML = exs.length === 0
+    ? '<div class="no-data-note">No exercises mapped.</div>'
+    : `<div class="exercise-cards">${exs.map(ex => {
+        const { best } = getExerciseBest1RM(ex.id);
+        const sessCount = state.sessions.filter(s => s.exerciseId === ex.id).length;
+        return `<div class="exercise-card">
+          <div><div class="ex-name">${ex.name}</div>
+          <div class="ex-meta">${sessCount} session${sessCount!==1?'s':''}</div></div>
+          <div class="ex-1rm">${best ? best.toFixed(1)+' kg' : '—'}</div>
+        </div>`;
+      }).join('')}</div>`;
+
+  // Show overlay and sheet
+  document.getElementById('bottom-sheet-overlay').style.display = 'block';
+  document.getElementById('bottom-sheet').classList.add('open');
+
+  // Default to exercises tab
+  switchBSTab('exercises', document.querySelector('.bottom-sheet .detail-tab'));
+}
+
+function closeBottomSheet() {
+  document.getElementById('bottom-sheet').classList.remove('open');
+  document.getElementById('bottom-sheet-overlay').style.display = 'none';
+  selectedMuscle = null;
+  renderSVGs();
+}
+
+function switchBSTab(tabName, el) {
+  document.querySelectorAll('.bottom-sheet .tab-pane').forEach(p => p.classList.remove('active'));
+  document.getElementById('bs-tab-'+tabName).classList.add('active');
+  if (el) {
+    document.querySelectorAll('.bottom-sheet .detail-tab').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+  }
+  if (tabName === 'history' && selectedMuscle) {
+    const history = getMuscleHistory(selectedMuscle);
+    const svg = document.getElementById('bs-history-chart-svg');
+    if (history.length < 2) {
+      svg.innerHTML = `<text x="50%" y="50%" text-anchor="middle" fill="var(--text-dimmer)" font-size="11" font-family="JetBrains Mono">Not enough data yet</text>`;
+    } else {
+      // Reuse desktop chart render logic
+      const W=340, H=120, pad={t:10,r:10,b:24,l:40};
+      const vals=history.map(h=>h.best1rm);
+      const minV=Math.min(...vals)*0.9, maxV=Math.max(...vals)*1.05;
+      const xScale=i=>pad.l+(i/(history.length-1))*(W-pad.l-pad.r);
+      const yScale=v=>pad.t+(1-(v-minV)/(maxV-minV))*(H-pad.t-pad.b);
+      const pts=history.map((h,i)=>`${xScale(i)},${yScale(h.best1rm)}`).join(' ');
+      svg.setAttribute('viewBox',`0 0 ${W} ${H}`);
+      svg.innerHTML=`<polyline points="${pts}" fill="none" stroke="var(--accent)" stroke-width="2"/>
+        ${history.map((h,i)=>`<circle cx="${xScale(i)}" cy="${yScale(h.best1rm)}" r="3" fill="var(--accent)"><title>${h.date}: ${h.best1rm.toFixed(1)}kg</title></circle>`).join('')}`;
+    }
+  }
+  if (tabName === 'sessions' && selectedMuscle) {
+    const exIds = EXERCISES.filter(e => e.primaryMuscle === selectedMuscle).map(e=>e.id);
+    const sessions = state.sessions.filter(s=>exIds.includes(s.exerciseId)).sort((a,b)=>b.date.localeCompare(a.date));
+    const container = document.getElementById('bs-sessions-container');
+    if (sessions.length === 0) { container.innerHTML='<div class="no-data-note">No sessions yet.</div>'; return; }
+    container.innerHTML = sessions.map(sess => {
+      const exName = EXERCISES.find(e=>e.id===sess.exerciseId)?.name||sess.exerciseId;
+      return `<div style="margin-bottom:12px">
+        <div style="font-size:11px;color:var(--text-dim);font-family:var(--mono);padding:6px 8px;background:var(--surface2);border-radius:6px 6px 0 0">${sess.date} · ${exName}</div>
+        <table class="sessions-table">
+          <tr><th>#</th><th>Type</th><th>Wt</th><th>Reps</th><th>RIR</th><th>1RM</th></tr>
+          ${sess.sets.map((set,si)=>`<tr>
+            <td>${si+1}</td>
+            <td><span class="set-type-badge badge-${set.type==='warmup'?'warmup':'target'}">${set.type==='warmup'?'W':'T'}</span></td>
+            <td>${set.weight}kg</td><td>${set.reps}</td><td>${set.rir}</td>
+            <td>${set.type==='target'?set.adj1rm.toFixed(1)+' kg':'—'}</td>
+          </tr>`).join('')}
+        </table>
+      </div>`;
+    }).join('');
+  }
+}
+
+
+
 function showPage(name) {
-  // Gate Log Session tab if profile incomplete
   if (name === 'log' && !isProfileComplete()) {
     checkProfileGate();
     return;
   }
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.header-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.bottom-nav-item').forEach(t => t.classList.remove('active'));
   document.getElementById('page-'+name).classList.add('active');
   const tabs = document.querySelectorAll('.header-tab');
   const map = { map:0, log:1, metrics:2 };
-  tabs[map[name]].classList.add('active');
+  if (tabs[map[name]]) tabs[map[name]].classList.add('active');
+  const bnavMap = { map:'bnav-map', log:'bnav-log', metrics:'bnav-metrics' };
+  if (bnavMap[name]) document.getElementById(bnavMap[name])?.classList.add('active');
   if (name === 'metrics') renderMetrics();
 }
 
