@@ -868,6 +868,7 @@ header {
   .header-right { gap: 6px; }
   .header-right .btn { font-size: 11px; padding: 5px 10px; }
   #gsi-user-label { display: none !important; }
+  .logo img { height: 48px; max-width: 200px; }
 
   .main { overflow: hidden; }
   .page.active { overflow-y: auto; padding-bottom: 60px; }
@@ -1070,7 +1071,7 @@ header {
 <body>
 
 <header>
-  <div class="logo"><img src="MMM_logo.png" alt="My Muscle Map" style="height:80px;width:auto;display:block"></div>
+  <div class="logo"><img src="MMM_logo.png" alt="My Muscle Map" style="height:64px;max-width:280px;width:auto;display:block"></div>
   <div class="header-tabs">
     <button class="header-tab active" onclick="showPage('map')">Body Map</button>
     <button class="header-tab" onclick="showPage('log')">Log Session</button>
@@ -2249,13 +2250,13 @@ function showTooltip(e, muscleId) {
   const level = getMuscleLevel(muscleId);
   const best  = getBest1RM(muscleId);
   const tt = document.getElementById('svg-tooltip');
-  tt.style.display = 'block';
-  tt.style.left = (e.clientX + 12) + 'px';
-  tt.style.top  = (e.clientY - 8) + 'px';
+  if (tt) tt.style.display = 'block';
+  if (tt) tt.style.left = (e.clientX + 12) + 'px';
+  if (tt) tt.style.top  = (e.clientY - 8) + 'px';
   tt.textContent = `${muscle.name} · ${LEVEL_NAMES[level]}${best ? ' · '+best.toFixed(1)+'kg 1RM' : ''}`;
 }
 function hideTooltip() {
-  document.getElementById('svg-tooltip').style.display = 'none';
+  { const _e=document.getElementById('svg-tooltip'); if(_e) _e.style.display='none'; }
 }
 
 // ═══════════════════════════════════════════════════════
@@ -2306,12 +2307,12 @@ function renderDetail() {
   if (!emptyEl || !contentEl) return; // not in DOM on mobile
   const muscle = MUSCLES.find(m => m.id === selectedMuscle);
   if (!muscle) {
-    emptyEl.style.display   = 'flex';
-    contentEl.style.display = 'none';
+    if (emptyEl) emptyEl.style.display   = 'flex';
+    if (contentEl) contentEl.style.display = 'none';
     return;
   }
-  emptyEl.style.display   = 'none';
-  contentEl.style.display = 'flex';
+  if (emptyEl) emptyEl.style.display   = 'none';
+  if (contentEl) contentEl.style.display = 'flex';
 
   document.getElementById('detail-name').textContent  = muscle.name;
   document.getElementById('detail-group').textContent = muscle.group;
@@ -2320,8 +2321,7 @@ function renderDetail() {
   const best  = getBest1RM(selectedMuscle);
   const badge = document.getElementById('detail-level-badge');
   badge.textContent = LEVEL_NAMES[level];
-  badge.style.background = LEVEL_COLORS[level];
-  badge.style.color = level === 0 ? 'var(--text-dim)' : (level <= 2 ? 'white' : level === 3 ? '#111' : 'white');
+  if (badge) { badge.style.background = LEVEL_COLORS[level]; badge.style.color = level === 0 ? 'var(--text-dim)' : (level <= 2 ? 'white' : level === 3 ? '#111' : 'white'); }
 
   document.getElementById('detail-1rm').textContent = best
     ? `Best 1RM: ${best.toFixed(1)} kg  ·  ${((best/(getWeightKgOn(null)||75))*100).toFixed(0)}% BW`
@@ -2934,8 +2934,8 @@ function pgAgeChanged() {
 
 function pgToggleHeight() {
   const isFtin = getRadioValue('pg-height-unit-group') === 'ftin';
-  document.getElementById('pg-height-cm-wrap').style.display   = isFtin ? 'none' : 'flex';
-  document.getElementById('pg-height-ftin-wrap').style.display = isFtin ? 'flex' : 'none';
+  { const _e=document.getElementById('pg-height-cm-wrap'); if(_e) _e.style.display=isFtin ? 'none' : 'flex'; }
+  { const _e=document.getElementById('pg-height-ftin-wrap'); if(_e) _e.style.display=isFtin ? 'flex' : 'none'; }
 }
 
 function saveProfileGate() {
@@ -3038,8 +3038,8 @@ function spAgeChanged() {
 
 function spToggleHeight() {
   const isFtin = getRadioValue('sp-height-unit-group') === 'ftin';
-  document.getElementById('sp-height-cm-wrap').style.display   = isFtin ? 'none' : 'flex';
-  document.getElementById('sp-height-ftin-wrap').style.display = isFtin ? 'flex' : 'none';
+  { const _e=document.getElementById('sp-height-cm-wrap'); if(_e) _e.style.display=isFtin ? 'none' : 'flex'; }
+  { const _e=document.getElementById('sp-height-ftin-wrap'); if(_e) _e.style.display=isFtin ? 'flex' : 'none'; }
 }
 
 function renderProfileTimestamps() {
@@ -3125,8 +3125,7 @@ function openBottomSheet(muscleId) {
 
   const badge = document.getElementById('bs-detail-level-badge');
   badge.textContent = LEVEL_NAMES[level];
-  badge.style.background = LEVEL_COLORS[level];
-  badge.style.color = level <= 2 ? 'white' : level === 3 ? '#111' : 'white';
+  if (badge) { badge.style.background = LEVEL_COLORS[level]; badge.style.color = level <= 2 ? 'white' : level === 3 ? '#111' : 'white'; }
 
   document.getElementById('bs-detail-1rm').textContent = best
     ? `Best 1RM: ${best.toFixed(1)} kg`
@@ -3148,7 +3147,7 @@ function openBottomSheet(muscleId) {
       }).join('')}</div>`;
 
   // Show overlay and sheet
-  document.getElementById('bottom-sheet-overlay').style.display = 'block';
+  { const _e=document.getElementById('bottom-sheet-overlay'); if(_e) _e.style.display='block'; }
   document.getElementById('bottom-sheet').classList.add('open');
 
   // Default to exercises tab
@@ -3157,7 +3156,7 @@ function openBottomSheet(muscleId) {
 
 function closeBottomSheet() {
   document.getElementById('bottom-sheet').classList.remove('open');
-  document.getElementById('bottom-sheet-overlay').style.display = 'none';
+  { const _e=document.getElementById('bottom-sheet-overlay'); if(_e) _e.style.display='none'; }
   selectedMuscle = null;
   renderSVGs();
 }
@@ -3389,9 +3388,9 @@ function gsiUpdateUI(signedIn) {
   if (label) {
     if (signedIn && gsiUserName) {
       label.textContent = gsiUserName;
-      label.style.display = '';
+      if (label) label.style.display = '';
     } else {
-      label.style.display = 'none';
+      if (label) label.style.display = 'none';
     }
   }
 }
@@ -3399,7 +3398,7 @@ function gsiUpdateUI(signedIn) {
 function gsiSyncIndicator(msg) {
   const el = document.getElementById('gsi-sync-indicator');
   el.textContent = msg;
-  el.style.display = msg ? '' : 'none';
+  if (el) el.style.display = msg ? '' : 'none';
 }
 
 function gsiIsReady() {
