@@ -868,7 +868,7 @@ header {
   .header-right { gap: 6px; }
   .header-right .btn { font-size: 11px; padding: 5px 10px; }
   #gsi-user-label { display: none !important; }
-  .logo img { height: 48px; max-width: 200px; }
+  .logo img { height: 120px; width: auto; }
 
   .main { overflow: hidden; }
   .page.active { overflow-y: auto; padding-bottom: 60px; }
@@ -1071,7 +1071,7 @@ header {
 <body>
 
 <header>
-  <div class="logo"><img src="MMM_logo.png?v=3" alt="My Muscle Map" style="height:64px;max-width:280px;width:auto;display:block"></div>
+  <div class="logo"><img src="MMM_logo.png?v=3" alt="My Muscle Map" style="height:180px;width:auto;display:block"></div>
   <div class="header-tabs">
     <button class="header-tab active" onclick="showPage('map')">Body Map</button>
     <button class="header-tab" onclick="showPage('log')">Log Session</button>
@@ -2253,7 +2253,7 @@ function showTooltip(e, muscleId) {
   if (tt) tt.style.display = 'block';
   if (tt) tt.style.left = (e.clientX + 12) + 'px';
   if (tt) tt.style.top  = (e.clientY - 8) + 'px';
-  tt.textContent = `${muscle.name} · ${LEVEL_NAMES[level]}${best ? ' · '+best.toFixed(1)+'kg 1RM' : ''}`;
+  if (tt) tt.textContent = `${muscle.name} · ${LEVEL_NAMES[level]}${best ? ' · '+best.toFixed(1)+'kg 1RM' : ''}`;
 }
 function hideTooltip() {
   { const _e=document.getElementById('svg-tooltip'); if(_e) _e.style.display='none'; }
@@ -2314,18 +2314,18 @@ function renderDetail() {
   if (emptyEl) emptyEl.style.display   = 'none';
   if (contentEl) contentEl.style.display = 'flex';
 
-  document.getElementById('detail-name').textContent  = muscle.name;
-  document.getElementById('detail-group').textContent = muscle.group;
+  { const _t=document.getElementById('detail-name'); if(_t) _t.textContent=muscle.name; }
+  { const _t=document.getElementById('detail-group'); if(_t) _t.textContent=muscle.group; }
 
   const level = getMuscleLevel(selectedMuscle);
   const best  = getBest1RM(selectedMuscle);
   const badge = document.getElementById('detail-level-badge');
-  badge.textContent = LEVEL_NAMES[level];
+  if (badge) badge.textContent = LEVEL_NAMES[level];
   if (badge) { badge.style.background = LEVEL_COLORS[level]; badge.style.color = level === 0 ? 'var(--text-dim)' : (level <= 2 ? 'white' : level === 3 ? '#111' : 'white'); }
 
-  document.getElementById('detail-1rm').textContent = best
+  { const _t=document.getElementById('detail-1rm'); if(_t) _t.textContent=best
     ? `Best 1RM: ${best.toFixed(1)} kg  ·  ${((best/(getWeightKgOn(null)||75))*100).toFixed(0)}% BW`
-    : 'No data yet';
+    : 'No data yet'; }
 
   renderDetailExercises();
   renderDetailHistory();
@@ -2530,7 +2530,7 @@ function onLogMuscleChange() {
   const exs = EXERCISES.filter(e => e.muscles.includes(muscleId));
   exSel.innerHTML = '<option value="">— Select exercise —</option>' +
     exs.map(e => `<option value="${e.id}">${e.name}</option>`).join('');
-  document.getElementById('log-muscle-inferred').textContent = '';
+  { const _t=document.getElementById('log-muscle-inferred'); if(_t) _t.textContent=''; }
 }
 
 function onLogExerciseChange() {
@@ -2541,8 +2541,7 @@ function onLogExerciseChange() {
   // Set primary muscle
   const muscle = MUSCLES.find(m => m.id === ex.primaryMuscle);
   document.getElementById('log-muscle-select').value = ex.primaryMuscle || '';
-  document.getElementById('log-muscle-inferred').textContent =
-    `↳ Primary: ${muscle?.name || ex.primaryMuscle}  ·  Also: ${ex.muscles.filter(m=>m!==ex.primaryMuscle).map(m=>MUSCLES.find(x=>x.id===m)?.name||m).join(', ')||'—'}`;
+  { const _t=document.getElementById('log-muscle-inferred'); if(_t) _t.textContent=`↳ Primary: ${muscle?.name || ex.primaryMuscle}  ·  Also: ${ex.muscles.filter(m=>m!==ex.primaryMuscle).map(m=>MUSCLES.find(x=>x.id===m)?.name||m).join(', ')||'—'}`; }
 }
 
 let sessionSets = [];
@@ -2560,9 +2559,9 @@ function updateSetPreview() {
   const preview = document.getElementById('set-preview-1rm');
   if (w && r && rir !== null) {
     const adj = adjusted1RM(w, r, rir);
-    preview.textContent = `Adj. 1RM: ${adj.toFixed(1)} kg`;
+    if (preview) preview.textContent = `Adj. 1RM: ${adj.toFixed(1)} kg`;
   } else {
-    preview.textContent = '';
+    if (preview) preview.textContent = '';
   }
 }
 
@@ -2586,7 +2585,7 @@ function saveSet() {
   document.getElementById('set-reps').value   = '';
   currentRIR = null;
   document.querySelectorAll('#rir-btns .rir-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById('set-preview-1rm').textContent = '';
+  { const _t=document.getElementById('set-preview-1rm'); if(_t) _t.textContent=''; }
 }
 
 function renderSessionSets() {
@@ -2617,7 +2616,7 @@ function updateSessionBest() {
     if (s.type === 'target' && (best === null || s.adj1rm > best)) best = s.adj1rm;
   }
   const el = document.getElementById('session-best-1rm');
-  el.textContent = best ? `Best adj.1RM: ${best.toFixed(1)} kg` : '';
+  if (el) el.textContent = best ? `Best adj.1RM: ${best.toFixed(1)} kg` : '';
 }
 
 function deleteSessionSet(i) {
@@ -2677,8 +2676,8 @@ function endSession() {
   saveState();
   sessionSets = [];
   renderSessionSets();
-  document.getElementById('end-session-note').textContent = `✓ Session saved · ${date} · ${ageAtSession}y · ${displayWeight(weightKgAtSession)}`;
-  setTimeout(()=>{ document.getElementById('end-session-note').textContent=''; }, 4000);
+  { const _t=document.getElementById('end-session-note'); if(_t) _t.textContent=`✓ Session saved · ${date} · ${ageAtSession}y · ${displayWeight(weightKgAtSession)}`; }
+  setTimeout(()=>{ { const _t=document.getElementById('end-session-note'); if(_t) _t.textContent=''; } }, 4000);
   renderSVGs();
   renderOverview();
   if (selectedMuscle) renderDetail();
@@ -3120,16 +3119,16 @@ function openBottomSheet(muscleId) {
   const level = getMuscleLevel(muscleId);
   const best  = getBest1RM(muscleId);
 
-  document.getElementById('bs-detail-name').textContent  = muscle.name;
-  document.getElementById('bs-detail-group').textContent = muscle.group;
+  { const _t=document.getElementById('bs-detail-name'); if(_t) _t.textContent=muscle.name; }
+  { const _t=document.getElementById('bs-detail-group'); if(_t) _t.textContent=muscle.group; }
 
   const badge = document.getElementById('bs-detail-level-badge');
-  badge.textContent = LEVEL_NAMES[level];
+  if (badge) badge.textContent = LEVEL_NAMES[level];
   if (badge) { badge.style.background = LEVEL_COLORS[level]; badge.style.color = level <= 2 ? 'white' : level === 3 ? '#111' : 'white'; }
 
-  document.getElementById('bs-detail-1rm').textContent = best
+  { const _t=document.getElementById('bs-detail-1rm'); if(_t) _t.textContent=best
     ? `Best 1RM: ${best.toFixed(1)} kg`
-    : 'No data yet';
+    : 'No data yet'; }
 
   // Populate exercises tab
   const exs = EXERCISES.filter(e => e.primaryMuscle === muscleId);
@@ -3397,7 +3396,7 @@ function gsiUpdateUI(signedIn) {
 
 function gsiSyncIndicator(msg) {
   const el = document.getElementById('gsi-sync-indicator');
-  el.textContent = msg;
+  if (el) el.textContent = msg;
   if (el) el.style.display = msg ? '' : 'none';
 }
 
