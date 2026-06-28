@@ -54,22 +54,28 @@ header {
   background: var(--surface);
   flex-shrink: 0;
   z-index: 10;
+  position: relative;
 }
 .header-left {
   display: flex;
   align-items: center;
   gap: 8px;
+  z-index: 1;
+}
+.header-right {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  z-index: 1;
+}
+.logo {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 0;
 }
 .gsi-mobile { display: none !important; }
 .gsi-desktop { display: flex; }
-
-.logo {
-  font-size: 20px;
-  font-weight: 800;
-  letter-spacing: -0.5px;
-  color: var(--text);
-}
-.logo span { color: var(--accent); }
 
 .header-tabs {
   display: flex;
