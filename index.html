@@ -867,11 +867,12 @@ header {
 
   body { overflow: hidden; }
 
-  header { padding: 6px 14px; }
+  header { padding: 6px 14px; grid-template-columns: 30% 40% 30%; }
   .header-tabs { display: none; }
   #gsi-signin-wrap { display: none !important; }
   #gsi-signin-wrap-mobile { display: flex !important; }
-  .logo img { height: 100px; width: auto; }
+  .logo { min-width: 0; overflow: hidden; }
+  .logo img { height: auto; max-height: 60px; max-width: 100%; width: auto; }
 
   .main { overflow: hidden; }
   .page.active { overflow-y: auto; padding-bottom: 60px; }
