@@ -55,6 +55,13 @@ header {
   flex-shrink: 0;
   z-index: 10;
 }
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.gsi-mobile { display: none !important; }
+.gsi-desktop { display: flex; }
 
 .logo {
   font-size: 20px;
@@ -72,13 +79,13 @@ header {
   border-radius: 8px;
 }
 .header-tab {
-  padding: 6px 16px;
+  padding: 8px 20px;
   border-radius: 6px;
   border: none;
   background: transparent;
   color: var(--text-dim);
   font-family: var(--sans);
-  font-size: 13px;
+  font-size: 16px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
@@ -96,11 +103,11 @@ header {
 }
 
 .btn {
-  padding: 7px 16px;
+  padding: 9px 18px;
   border-radius: 7px;
   border: none;
   font-family: var(--sans);
-  font-size: 13px;
+  font-size: 16px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.18s;
@@ -116,7 +123,7 @@ header {
   border: 1px solid var(--border);
 }
 .btn-ghost:hover { color: var(--text); border-color: var(--text-dim); }
-.btn-sm { padding: 5px 11px; font-size: 12px; }
+.btn-sm { padding: 7px 14px; font-size: 15px; }
 .btn-danger { background: #c0392b; color: white; }
 .btn-danger:hover { background: #a93226; }
 .btn-success { background: #27ae60; color: white; }
@@ -863,11 +870,14 @@ header {
 
   body { overflow: hidden; }
 
-  header { padding: 10px 16px; }
+  header { padding: 8px 16px; }
   .header-tabs { display: none; }
   .header-right { gap: 6px; }
   .header-right .btn { font-size: 11px; padding: 5px 10px; }
-  #gsi-user-label { display: none !important; }
+  .gsi-desktop { display: none !important; }
+  .gsi-mobile { display: flex !important; }
+  #gsi-signin-btn-mobile { display: none; }
+  #gsi-signout-btn-mobile { display: none; }
   .logo img { height: 120px; width: auto; }
 
   .main { overflow: hidden; }
@@ -1071,20 +1081,33 @@ header {
 <body>
 
 <header>
-  <div class="logo"><img src="MMM_logo.png?v=3" alt="My Muscle Map" style="height:180px;width:auto;display:block"></div>
-  <div class="header-tabs">
-    <button class="header-tab active" onclick="showPage('map')">Body Map</button>
-    <button class="header-tab" onclick="showPage('log')">Log Session</button>
-    <button class="header-tab" onclick="showPage('metrics')">Body Metrics</button>
-  </div>
-  <div class="header-right">
-    <div id="gsi-status" style="display:flex;align-items:center;gap:8px">
+  <!-- Profile button — left on both desktop and mobile -->
+  <div class="header-left">
+    <button class="btn btn-ghost btn-sm" onclick="openSettingsModal()">⚙ Profile</button>
+    <!-- Google sign-in — left side on desktop only (hidden on mobile via CSS) -->
+    <div id="gsi-status" class="gsi-desktop" style="display:flex;align-items:center;gap:8px">
       <span id="gsi-user-label" style="font-size:11px;color:var(--text-dim);font-family:var(--mono);display:none"></span>
       <button id="gsi-signin-btn" class="btn btn-ghost btn-sm" onclick="gsiSignIn()" style="display:none">⬡ Sign in with Google</button>
       <button id="gsi-signout-btn" class="btn btn-ghost btn-sm" onclick="gsiSignOut()" style="display:none;font-size:11px">Sign out</button>
       <span id="gsi-sync-indicator" style="font-size:10px;font-family:var(--mono);color:var(--text-dimmer);display:none"></span>
     </div>
-    <button class="btn btn-ghost btn-sm" onclick="openSettingsModal()">⚙ Profile</button>
+  </div>
+
+  <!-- Logo — centre -->
+  <div class="logo"><img id="mmm-logo" src="MMM_logo.png" alt="My Muscle Map" style="height:180px;width:auto;display:block"></div>
+
+  <!-- Right side — tabs on desktop, Google on mobile -->
+  <div class="header-right">
+    <div class="header-tabs">
+      <button class="header-tab active" onclick="showPage('map')">Body Map</button>
+      <button class="header-tab" onclick="showPage('log')">Log Session</button>
+      <button class="header-tab" onclick="showPage('metrics')">Body Metrics</button>
+    </div>
+    <!-- Google sign-in — right side on mobile only -->
+    <div id="gsi-status-mobile" class="gsi-mobile" style="display:none;align-items:center;gap:6px">
+      <button id="gsi-signin-btn-mobile" class="btn btn-ghost btn-sm" onclick="gsiSignIn()" style="display:none;font-size:11px">⬡ Google</button>
+      <button id="gsi-signout-btn-mobile" class="btn btn-ghost btn-sm" onclick="gsiSignOut()" style="display:none;font-size:11px">Sign out</button>
+    </div>
   </div>
 </header>
 
@@ -3254,6 +3277,9 @@ function todayStr() {
 
 function init() {
   loadState();
+  // Force fresh logo on every load
+  const logo = document.getElementById('mmm-logo');
+  if (logo) logo.src = 'MMM_logo.png?v=' + Date.now();
   document.getElementById('log-date').value = todayStr();
   populateLogSelects();
   renderSVGs();
@@ -3263,6 +3289,8 @@ function init() {
   window.addEventListener('load', () => {
     const btn = document.getElementById('gsi-signin-btn');
     if (btn) btn.style.display = '';
+    const btnMob = document.getElementById('gsi-signin-btn-mobile');
+    if (btnMob) btnMob.style.display = '';
     gsiInit();
   });
 }
@@ -3382,8 +3410,12 @@ function gsiUpdateUI(signedIn) {
   const signinBtn  = document.getElementById('gsi-signin-btn');
   const signoutBtn = document.getElementById('gsi-signout-btn');
   const label      = document.getElementById('gsi-user-label');
+  const signinMob  = document.getElementById('gsi-signin-btn-mobile');
+  const signoutMob = document.getElementById('gsi-signout-btn-mobile');
   if (signinBtn)  signinBtn.style.display  = signedIn ? 'none' : '';
   if (signoutBtn) signoutBtn.style.display = signedIn ? '' : 'none';
+  if (signinMob)  signinMob.style.display  = signedIn ? 'none' : '';
+  if (signoutMob) signoutMob.style.display = signedIn ? '' : 'none';
   if (label) {
     if (signedIn && gsiUserName) {
       label.textContent = gsiUserName;
