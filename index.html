@@ -3345,16 +3345,18 @@ function gsiGetOrCreateUUID() {
 async function gsiRegisterUser(event = 'signin') {
   const uuid = gsiGetOrCreateUUID();
   const isFirstSignIn = !localStorage.getItem('mmm_registered');
-  // Only POST on first sign-in ever — subsequent sign-ins just log 'return'
   try {
-    await fetch(MMM_REGISTRY_URL, {
+    const resp = await fetch(MMM_REGISTRY_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      redirect: 'follow',
+      headers: { 'Content-Type': 'text/plain' },
       body: JSON.stringify({ uuid, event: isFirstSignIn ? 'first_signin' : event }),
     });
+    const text = await resp.text();
+    console.log('Registry response:', text);
     localStorage.setItem('mmm_registered', '1');
   } catch(e) {
-    console.log('Registry ping failed silently:', e);
+    console.log('Registry ping failed:', e);
   }
 }
 
