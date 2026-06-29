@@ -1096,7 +1096,7 @@ header {
   <div class="header-right">
     <div class="header-tabs">
       <button class="header-tab active" onclick="showPage('map')">Body Map</button>
-      <button class="header-tab" onclick="showPage('log')">Log Session</button>
+      <button class="header-tab" onclick="showPage('log')">Log Workout</button>
       <button class="header-tab" onclick="showPage('metrics')">Body Metrics</button>
     </div>
     <div id="gsi-signin-wrap-mobile" style="display:none;align-items:center;gap:6px">
@@ -1188,7 +1188,7 @@ header {
   <div id="page-log" class="page">
     <div class="log-container">
       <div class="log-header">
-        <div class="log-title">Log Session</div>
+        <div class="log-title">Log Workout</div>
       </div>
 
       <!-- Exercise selection -->
@@ -1213,7 +1213,7 @@ header {
 
       <!-- Date -->
       <div class="card">
-        <div class="card-title">Session Date</div>
+        <div class="card-title">Workout Date</div>
         <div class="form-row">
           <div class="form-group" style="max-width:200px">
             <label class="form-label">Date</label>
@@ -1268,7 +1268,7 @@ header {
 
       <!-- End session -->
       <div style="display:flex; gap:10px; align-items:center">
-        <button class="btn btn-success" onclick="endSession()" id="end-session-btn">End Session & Update Scores</button>
+        <button class="btn btn-success" onclick="endSession()" id="end-session-btn">Save Workout</button>
         <button class="btn btn-ghost btn-sm" onclick="clearSession()">Clear All</button>
         <span id="end-session-note" style="font-size:11px; color:var(--text-dim); font-family:var(--mono)"></span>
       </div>
@@ -1319,7 +1319,7 @@ header {
     </button>
     <button class="bottom-nav-item" onclick="showPage('log')" id="bnav-log">
       <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
-      Log Session
+      Log Workout
     </button>
     <button class="bottom-nav-item" onclick="showPage('metrics')" id="bnav-metrics">
       <svg viewBox="0 0 24 24"><path d="M3 18l4-8 4 6 4-4 4 6"/></svg>
@@ -2377,7 +2377,7 @@ function renderDetailExercises() {
       <div class="exercise-card${isSelected?' selected-ex':''}" onclick="selectDetailExercise('${ex.id}')">
         <div>
           <div class="ex-name">${ex.name}</div>
-          <div class="ex-meta">${isPrimary?'Primary':'Secondary'} · ${sessCount} session${sessCount!==1?'s':''}</div>
+          <div class="ex-meta">${isPrimary?'Primary':'Secondary'} · ${sessCount} workout${sessCount!==1?'s':''}</div>
         </div>
         <div class="ex-1rm">${best ? best.toFixed(1)+' kg' : '—'}</div>
       </div>
@@ -2470,7 +2470,7 @@ function renderDetailSessions() {
     .sort((a,b) => b.date.localeCompare(a.date));
 
   if (relevantSessions.length === 0) {
-    container.innerHTML = '<div class="no-data-note">No sessions logged yet.</div>';
+    container.innerHTML = '<div class="no-data-note">No workouts logged yet.</div>';
     return;
   }
 
@@ -2480,7 +2480,7 @@ function renderDetailSessions() {
     html += `
       <div style="margin-bottom:12px">
         <div style="font-size:11px; color:var(--text-dim); font-family:var(--mono); padding:6px 8px; background:var(--surface2); border-radius:6px 6px 0 0; display:flex; justify-content:space-between">
-          <span>${sess.date} · ${exName}</span>
+          <span>${sessDateStr(sess)} · ${exName}</span>
           <span style="color:var(--accent)">${getBestTargetAdjFromSets(sess.sets) ? getBestTargetAdjFromSets(sess.sets).toFixed(1)+' kg adj.1RM' : ''}</span>
         </div>
         <table class="sessions-table" style="border-radius:0 0 6px 6px; overflow:hidden">
@@ -2496,6 +2496,7 @@ function renderDetailSessions() {
               <td>${set.reps}</td>
               <td>${set.rir}</td>
               <td>${set.type==='target'?set.adj1rm.toFixed(1)+' kg':'—'}</td>
+              <td style="font-size:10px;color:var(--text-dimmer);font-family:var(--mono)">${set.loggedAt ? new Date(set.loggedAt).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',hour12:true}) : ''}</td>
               <td>
                 <button class="btn-icon edit" onclick="openEditSetModal('${sess.id}','${si}')" title="Edit">✎</button>
               </td>
@@ -2600,7 +2601,7 @@ function saveSet() {
   const rir    = currentRIR;
   if (!weight || !reps || rir === null) { alert('Please fill in weight, reps, and RIR.'); return; }
   const adj = adjusted1RM(weight, reps, rir);
-  sessionSets.push({ type, weight, reps, rir, adj1rm: adj });
+  sessionSets.push({ type, weight, reps, rir, adj1rm: adj, loggedAt: new Date().toISOString() });
   renderSessionSets();
   document.getElementById('set-weight').value = '';
   document.getElementById('set-reps').value   = '';
@@ -2679,7 +2680,7 @@ function endSession() {
   if (!isProfileComplete()) { checkProfileGate(); return; }
   const exId = document.getElementById('log-exercise-select').value;
   if (!exId) { alert('Please select an exercise.'); return; }
-  if (sessionSets.length === 0) { alert('No sets logged.'); return; }
+  if (sessionSets.length === 0) { alert('No sets logged. Add at least one set before saving.'); return; }
   const date = document.getElementById('log-date').value || todayStr();
   const weightKgAtSession   = getWeightKgOn(date);
   const ageAtSession        = getAgeOn(date);
@@ -2687,6 +2688,7 @@ function endSession() {
   const sess = {
     id: 'sess_' + Date.now(),
     date,
+    loggedAt: new Date().toISOString(),
     exerciseId: exId,
     weightKgAtSession,
     ageAtSession,
@@ -2697,7 +2699,7 @@ function endSession() {
   saveState();
   sessionSets = [];
   renderSessionSets();
-  { const _t=document.getElementById('end-session-note'); if(_t) _t.textContent=`✓ Session saved · ${date} · ${ageAtSession}y · ${displayWeight(weightKgAtSession)}`; }
+  { const _t=document.getElementById('end-session-note'); if(_t) _t.textContent=`✓ Workout saved · ${date} · ${ageAtSession}y · ${displayWeight(weightKgAtSession)}`; }
   setTimeout(()=>{ { const _t=document.getElementById('end-session-note'); if(_t) _t.textContent=''; } }, 4000);
   renderSVGs();
   renderOverview();
@@ -2705,7 +2707,7 @@ function endSession() {
 }
 
 function clearSession() {
-  if (!confirm('Clear all sets in this session?')) return;
+  if (!confirm('Clear all sets in this workout?')) return;
   sessionSets = [];
   renderSessionSets();
 }
@@ -2931,12 +2933,12 @@ function isProfileComplete() {
 }
 
 function checkProfileGate() {
-  // Gate only triggers when navigating to Log Session
+  // Gate only triggers when navigating to Log Workout
   // Never blocks on load or other tabs
   const overlay = document.getElementById('profile-gate-overlay');
   if (!isProfileComplete()) {
     overlay.classList.remove('hidden');
-    // Prevent clicking outside to dismiss when on Log Session
+    // Prevent clicking outside to dismiss when on Log Workout
     overlay.onclick = null;
   }
 }
@@ -3161,7 +3163,7 @@ function openBottomSheet(muscleId) {
         const sessCount = state.sessions.filter(s => s.exerciseId === ex.id).length;
         return `<div class="exercise-card">
           <div><div class="ex-name">${ex.name}</div>
-          <div class="ex-meta">${sessCount} session${sessCount!==1?'s':''}</div></div>
+          <div class="ex-meta">${sessCount} workout${sessCount!==1?'s':''}</div></div>
           <div class="ex-1rm">${best ? best.toFixed(1)+' kg' : '—'}</div>
         </div>`;
       }).join('')}</div>`;
@@ -3210,11 +3212,11 @@ function switchBSTab(tabName, el) {
     const exIds = EXERCISES.filter(e => e.primaryMuscle === selectedMuscle).map(e=>e.id);
     const sessions = state.sessions.filter(s=>exIds.includes(s.exerciseId)).sort((a,b)=>b.date.localeCompare(a.date));
     const container = document.getElementById('bs-sessions-container');
-    if (sessions.length === 0) { container.innerHTML='<div class="no-data-note">No sessions yet.</div>'; return; }
+    if (sessions.length === 0) { container.innerHTML='<div class="no-data-note">No workouts yet.</div>'; return; }
     container.innerHTML = sessions.map(sess => {
       const exName = EXERCISES.find(e=>e.id===sess.exerciseId)?.name||sess.exerciseId;
       return `<div style="margin-bottom:12px">
-        <div style="font-size:11px;color:var(--text-dim);font-family:var(--mono);padding:6px 8px;background:var(--surface2);border-radius:6px 6px 0 0">${sess.date} · ${exName}</div>
+        <div style="font-size:11px;color:var(--text-dim);font-family:var(--mono);padding:6px 8px;background:var(--surface2);border-radius:6px 6px 0 0">${sessDateStr(sess)} · ${exName}</div>
         <table class="sessions-table">
           <tr><th>#</th><th>Type</th><th>Wt</th><th>Reps</th><th>RIR</th><th>1RM</th></tr>
           ${sess.sets.map((set,si)=>`<tr>
@@ -3267,6 +3269,16 @@ document.querySelectorAll('.modal-overlay').forEach(o => {
 
 function todayStr() {
   return new Date().toISOString().slice(0,10);
+}
+
+function sessDateStr(sess) {
+  // Show date + time if loggedAt available, otherwise just date
+  if (sess.loggedAt) {
+    const d = new Date(sess.loggedAt);
+    const time = d.toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit', hour12:true });
+    return `${sess.date} · ${time}`;
+  }
+  return sess.date;
 }
 
 // ═══════════════════════════════════════════════════════
@@ -3652,7 +3664,7 @@ async function gsiPushSessions() {
         sess.ageAtSession      || '',
         sess.thresholdMult     || '',
         ex?.primaryMuscle      || '',
-        new Date().toISOString(),
+        sess.loggedAt || new Date().toISOString(),
         '', // correctionOf
       ]);
     }
