@@ -2676,6 +2676,43 @@ function saveEditSet() {
   renderSessionSets();
 }
 
+// ── Pending queue helpers ─────────────────────────────
+function getPendingQueue() {
+  try { return JSON.parse(localStorage.getItem('mmm_pending') || '[]'); } catch(e) { return []; }
+}
+function setPendingQueue(q) {
+  localStorage.setItem('mmm_pending', JSON.stringify(q));
+}
+function addToPendingQueue(sess) {
+  const q = getPendingQueue();
+  q.push(sess);
+  setPendingQueue(q);
+}
+function removeFromPendingQueue(sessId) {
+  const q = getPendingQueue().filter(s => s.id !== sessId);
+  setPendingQueue(q);
+}
+
+async function flushPendingQueue() {
+  if (!gsiIsReady() || !gsiSheetId) return;
+  const q = getPendingQueue();
+  if (q.length === 0) return;
+  gsiSyncIndicator('Syncing pending workouts…');
+  for (const sess of q) {
+    try {
+      await gsiAppendSession(sess);
+      removeFromPendingQueue(sess.id);
+    } catch(e) {
+      console.error('Failed to push pending session:', sess.id, e);
+    }
+  }
+  if (getPendingQueue().length === 0) {
+    gsiSyncIndicator('');
+  } else {
+    gsiSyncIndicator('Some workouts pending sync');
+  }
+}
+
 function endSession() {
   if (!isProfileComplete()) { checkProfileGate(); return; }
   const exId = document.getElementById('log-exercise-select').value;
@@ -2695,11 +2732,36 @@ function endSession() {
     thresholdMult,
     sets: [...sessionSets],
   };
+
+  // 1. Add to pending queue (survives offline)
+  addToPendingQueue(sess);
+
+  // 2. Add to local state immediately (body map updates now)
   state.sessions.push(sess);
   saveState();
+
   sessionSets = [];
   renderSessionSets();
-  { const _t=document.getElementById('end-session-note'); if(_t) _t.textContent=`✓ Workout saved · ${date} · ${ageAtSession}y · ${displayWeight(weightKgAtSession)}`; }
+
+  // 3. Attempt to push to sheet immediately if online
+  if (gsiIsReady() && gsiSheetId) {
+    gsiSyncIndicator('Saving…');
+    gsiAppendSession(sess).then(() => {
+      removeFromPendingQueue(sess.id);
+      gsiSyncIndicator('✓ Saved');
+      setTimeout(() => gsiSyncIndicator(''), 2000);
+    }).catch(e => {
+      console.error('Push failed, kept in queue:', e);
+      gsiSyncIndicator('Saved locally — will sync when online');
+      setTimeout(() => gsiSyncIndicator(''), 3000);
+    });
+  } else if (gsiIsReady() === false && localStorage.getItem('mmm_gsi_token')) {
+    gsiSyncIndicator('Saved locally — will sync when online');
+    setTimeout(() => gsiSyncIndicator(''), 3000);
+  }
+
+  const note = `✓ Workout saved · ${date} · ${ageAtSession}y · ${displayWeight(weightKgAtSession)}`;
+  { const _t=document.getElementById('end-session-note'); if(_t) _t.textContent=note; }
   setTimeout(()=>{ { const _t=document.getElementById('end-session-note'); if(_t) _t.textContent=''; } }, 4000);
   renderSVGs();
   renderOverview();
@@ -3437,9 +3499,9 @@ function gsiSignIn() {
 
       gsiUpdateUI(true);
       await gsiEnsureSheet();
-      // Pull from sheet first (sheet is source of truth), then push local additions
+      // Pull from sheet first (sheet is truth), but push any pending offline workouts first
+      await flushPendingQueue();
       await gsiPullAll();
-      await gsiPushAll();
     },
   });
   gsiTokenClient.requestAccessToken({ prompt: 'consent' });
@@ -3556,10 +3618,40 @@ async function gsiWriteHeaders() {
 
 // ── Sync operations ───────────────────────────────────
 
+async function gsiAppendSession(sess) {
+  // Appends a single session to the sheet (never overwrites existing data)
+  const sid = gsiSheetId;
+  const ex = EXERCISES.find(e => e.id === sess.exerciseId);
+  const rows = sess.sets.map(set => [
+    sess.id,
+    sess.date,
+    sess.exerciseId,
+    set.type,
+    set.weight,
+    set.reps,
+    set.rir,
+    set.adj1rm?.toFixed(2) || '',
+    sess.weightKgAtSession || '',
+    sess.ageAtSession      || '',
+    sess.thresholdMult     || '',
+    ex?.primaryMuscle      || '',
+    sess.loggedAt || new Date().toISOString(),
+    '',
+  ]);
+  await gsiSheetsRequest(
+    `${SHEETS_API}/${sid}/values/Sessions!A:N:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS`,
+    'POST',
+    { values: rows }
+  );
+}
+
 async function gsiSyncOnLoad() {
   if (!gsiIsReady() || !gsiSheetId) return;
   gsiSyncIndicator('Syncing…');
   try {
+    // 1. Flush pending queue first (push offline workouts before pulling)
+    await flushPendingQueue();
+    // 2. Pull from sheet (sheet is source of truth after pending is flushed)
     await gsiPullAll();
     gsiSyncIndicator('✓ Synced');
     setTimeout(() => gsiSyncIndicator(''), 2000);
@@ -3717,14 +3809,8 @@ async function gsiDriveRequest(url, method, body) {
 
 // ── Hook into existing save operations ────────────────
 
-// Wrap saveState to also push to Sheets when signed in
-const _origSaveState = saveState;
-window.saveState = function() {
-  _origSaveState();
-  if (gsiIsReady()) {
-    gsiPushAll().catch(e => console.error('Background sync failed:', e));
-  }
-};
+// saveState only saves to localStorage — no automatic sheet push
+// Sheet pushes happen only from endSession (via pending queue)
 
 init();
 </script>
