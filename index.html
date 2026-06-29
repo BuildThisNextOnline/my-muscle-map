@@ -1706,34 +1706,38 @@ header {
 // ═══════════════════════════════════════════════════════
 
 const MUSCLES = [
-  // Front upper
-  { id:'upper-chest',    name:'Chest (Upper)',                group:'Upper Body · Front', view:'front', thresholds:[0.3,0.5,0.75,1.0,1.5] },
-  { id:'lower-chest',    name:'Chest (Lower)',                group:'Upper Body · Front', view:'front', thresholds:[0.3,0.5,0.75,1.0,1.5] },
-  { id:'front-deltoid',  name:'Shoulder (Front Deltoid)',     group:'Upper Body · Front', view:'front', thresholds:[0.15,0.25,0.4,0.55,0.8] },
-  { id:'side-deltoid',   name:'Shoulder (Side Deltoid)',      group:'Upper Body · Front', view:'front', thresholds:[0.1,0.2,0.35,0.5,0.75] },
-  { id:'biceps',         name:'Arms (Biceps)',                group:'Upper Body · Front', view:'front', thresholds:[0.2,0.35,0.5,0.7,1.0] },
-  { id:'brachialis',     name:'Arms (Brachialis)',            group:'Upper Body · Front', view:'front', thresholds:[0.15,0.3,0.45,0.6,0.9] },
-  { id:'forearm-flex',   name:'Forearms (Flexors | Inner)',   group:'Upper Body · Front', view:'front', thresholds:[0.15,0.25,0.4,0.55,0.8] },
-  // Front lower
+  // Shoulders
+  { id:'front-deltoid',  name:'Shoulder (Front Deltoid)',     group:'Shoulders',          view:'front', thresholds:[0.15,0.25,0.4,0.55,0.8] },
+  { id:'side-deltoid',   name:'Shoulder (Side Deltoid)',      group:'Shoulders',          view:'front', thresholds:[0.1,0.2,0.35,0.5,0.75] },
+  { id:'rear-deltoid',   name:'Shoulder (Rear Deltoid)',      group:'Shoulders',          view:'back',  thresholds:[0.1,0.2,0.35,0.5,0.75] },
+  // Chest
+  { id:'upper-chest',    name:'Chest (Upper)',                group:'Chest',              view:'front', thresholds:[0.3,0.5,0.75,1.0,1.5] },
+  { id:'lower-chest',    name:'Chest (Lower)',                group:'Chest',              view:'front', thresholds:[0.3,0.5,0.75,1.0,1.5] },
+  // Arms
+  { id:'biceps',         name:'Arms (Biceps)',                group:'Arms',               view:'front', thresholds:[0.2,0.35,0.5,0.7,1.0] },
+  { id:'brachialis',     name:'Arms (Brachialis)',            group:'Arms',               view:'front', thresholds:[0.15,0.3,0.45,0.6,0.9] },
+  { id:'triceps',        name:'Arms (Triceps)',               group:'Arms',               view:'back',  thresholds:[0.25,0.45,0.65,0.9,1.3] },
+  // Forearms
+  { id:'forearm-flex',   name:'Forearms (Flexors | Inner)',   group:'Forearms',           view:'front', thresholds:[0.15,0.25,0.4,0.55,0.8] },
+  { id:'forearm-ext',    name:'Forearms (Extensors | Outer)', group:'Forearms',           view:'back',  thresholds:[0.12,0.22,0.35,0.5,0.75] },
+  // Back
+  { id:'upper-traps',    name:'Back (Upper Traps)',           group:'Back',               view:'back',  thresholds:[0.3,0.5,0.75,1.0,1.5] },
+  { id:'lower-traps',    name:'Back (Lower Traps)',           group:'Back',               view:'back',  thresholds:[0.2,0.4,0.6,0.85,1.2] },
+  { id:'rhomboids',      name:'Back (Rhomboids)',             group:'Back',               view:'back',  thresholds:[0.2,0.4,0.6,0.85,1.2] },
+  { id:'lats',           name:'Back (Lats)',                  group:'Back',               view:'back',  thresholds:[0.4,0.7,1.0,1.4,2.0] },
+  { id:'erector',        name:'Back (Erector Spinae)',        group:'Back',               view:'back',  thresholds:[0.5,0.9,1.3,1.75,2.5] },
+  // Core
   { id:'upper-abs',      name:'Core (Upper Abs)',             group:'Core',               view:'front', thresholds:[0.1,0.2,0.35,0.5,0.8] },
   { id:'lower-abs',      name:'Core (Lower Abs)',             group:'Core',               view:'front', thresholds:[0.1,0.2,0.35,0.5,0.8] },
   { id:'obliques',       name:'Core (Obliques)',              group:'Core',               view:'front', thresholds:[0.1,0.2,0.35,0.5,0.75] },
-  { id:'quads',          name:'Legs (Quads)',                 group:'Lower Body · Front', view:'front', thresholds:[0.5,0.9,1.3,1.75,2.5] },
-  { id:'hip-flexors',    name:'Core (Hip Flexors)',           group:'Lower Body · Front', view:'front', thresholds:[0.1,0.2,0.35,0.5,0.75] },
-  { id:'tibialis',       name:'Legs (Shin)',                  group:'Lower Body · Front', view:'front', thresholds:[0.1,0.2,0.3,0.45,0.65] },
-  // Back upper
-  { id:'upper-traps',    name:'Back (Upper Traps)',           group:'Upper Body · Back',  view:'back',  thresholds:[0.3,0.5,0.75,1.0,1.5] },
-  { id:'lower-traps',    name:'Back (Lower Traps)',           group:'Upper Body · Back',  view:'back',  thresholds:[0.2,0.4,0.6,0.85,1.2] },
-  { id:'rear-deltoid',   name:'Shoulder (Rear Deltoid)',      group:'Upper Body · Back',  view:'back',  thresholds:[0.1,0.2,0.35,0.5,0.75] },
-  { id:'lats',           name:'Back (Lats)',                  group:'Upper Body · Back',  view:'back',  thresholds:[0.4,0.7,1.0,1.4,2.0] },
-  { id:'rhomboids',      name:'Back (Rhomboids)',             group:'Upper Body · Back',  view:'back',  thresholds:[0.2,0.4,0.6,0.85,1.2] },
-  { id:'triceps',        name:'Arms (Triceps)',               group:'Upper Body · Back',  view:'back',  thresholds:[0.25,0.45,0.65,0.9,1.3] },
-  { id:'forearm-ext',    name:'Forearms (Extensors | Outer)', group:'Upper Body · Back',  view:'back',  thresholds:[0.12,0.22,0.35,0.5,0.75] },
-  // Back lower
-  { id:'erector',        name:'Back (Erector Spinae)',        group:'Core',               view:'back',  thresholds:[0.5,0.9,1.3,1.75,2.5] },
-  { id:'glutes',         name:'Glutes',                       group:'Lower Body · Back',  view:'back',  thresholds:[0.5,0.9,1.3,1.75,2.5] },
-  { id:'hamstrings',     name:'Legs (Hamstrings)',            group:'Lower Body · Back',  view:'back',  thresholds:[0.4,0.7,1.0,1.4,2.0] },
-  { id:'calves',         name:'Legs (Calves)',                group:'Lower Body · Back',  view:'back',  thresholds:[0.6,1.0,1.4,1.8,2.5] },
+  { id:'hip-flexors',    name:'Core (Hip Flexors)',           group:'Core',               view:'front', thresholds:[0.1,0.2,0.35,0.5,0.75] },
+  // Glutes
+  { id:'glutes',         name:'Glutes',                       group:'Glutes',             view:'back',  thresholds:[0.5,0.9,1.3,1.75,2.5] },
+  // Legs
+  { id:'quads',          name:'Legs (Quads)',                 group:'Legs',               view:'front', thresholds:[0.5,0.9,1.3,1.75,2.5] },
+  { id:'hamstrings',     name:'Legs (Hamstrings)',            group:'Legs',               view:'back',  thresholds:[0.4,0.7,1.0,1.4,2.0] },
+  { id:'calves',         name:'Legs (Calves)',                group:'Legs',               view:'back',  thresholds:[0.6,1.0,1.4,1.8,2.5] },
+  { id:'tibialis',       name:'Legs (Shin)',                  group:'Legs',               view:'front', thresholds:[0.1,0.2,0.3,0.45,0.65] },
 ];
 
 const EXERCISES = [
@@ -2288,7 +2292,7 @@ function renderOverview() {
   const counts = [0,0,0,0,0,0];
   for (const m of MUSCLES) counts[getMuscleLevel(m.id)]++;
   const trained = counts[1] + counts[2] + counts[3] + counts[4] + counts[5];
-  const labels  = ['No Data','Beginner','Novice','Intermed.','Advanced','Elite'];
+  const labels  = ['No Data','Beginner','Novice','Intermediate','Advanced','Elite'];
   const grid = document.getElementById('overview-grid');
   // First cell: trained/total summary; then level buckets 1-5 only (skip 0=no data)
   const trainedCell = `
@@ -2540,16 +2544,16 @@ function populateLogSelects() {
   muscleSelect.innerHTML = '<option value="">— Select muscle —</option>' +
     MUSCLES.map(m => `<option value="${m.id}">${m.name}</option>`).join('');
 
+  const sortedEx = [...EXERCISES].sort((a,b) => a.name.localeCompare(b.name));
   exerciseSelect.innerHTML = '<option value="">— Select exercise —</option>' +
-    EXERCISES.map(e => `<option value="${e.id}">${e.name}</option>`).join('');
+    sortedEx.map(e => `<option value="${e.id}">${e.name}</option>`).join('');
 }
 
 function onLogMuscleChange() {
   const muscleId = document.getElementById('log-muscle-select').value;
   if (!muscleId) return;
-  // Filter exercises
   const exSel = document.getElementById('log-exercise-select');
-  const exs = EXERCISES.filter(e => e.muscles.includes(muscleId));
+  const exs = [...EXERCISES.filter(e => e.muscles.includes(muscleId))].sort((a,b) => a.name.localeCompare(b.name));
   exSel.innerHTML = '<option value="">— Select exercise —</option>' +
     exs.map(e => `<option value="${e.id}">${e.name}</option>`).join('');
   { const _t=document.getElementById('log-muscle-inferred'); if(_t) _t.textContent=''; }
