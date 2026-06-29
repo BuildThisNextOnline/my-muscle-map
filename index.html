@@ -3320,13 +3320,42 @@ function gsiInit() {
   const expiry  = parseInt(localStorage.getItem('mmm_gsi_expiry') || '0');
 
   if (token && Date.now() < expiry) {
+    // Token still valid — sync immediately
     gsiAccessToken = token;
     gsiTokenExpiry = expiry;
     gsiUpdateUI(true);
     gsiSyncOnLoad();
+  } else if (token && window.google) {
+    // Token expired — attempt silent refresh (no UI prompt)
+    gsiTokenClient = google.accounts.oauth2.initTokenClient({
+      client_id: GSI_CLIENT_ID,
+      scope: GSI_SCOPES,
+      prompt: '',
+      callback: async (resp) => {
+        if (resp.error) {
+          // Silent refresh failed — show sign-in button
+          gsiUpdateUI(false);
+          return;
+        }
+        gsiAccessToken = resp.access_token;
+        gsiTokenExpiry = Date.now() + (resp.expires_in - 60) * 1000;
+        localStorage.setItem('mmm_gsi_token',  gsiAccessToken);
+        localStorage.setItem('mmm_gsi_expiry', gsiTokenExpiry);
+        gsiUpdateUI(true);
+        gsiSyncOnLoad();
+      },
+    });
+    gsiTokenClient.requestAccessToken({ prompt: '' });
   } else {
     gsiUpdateUI(false);
   }
+
+  // Fix 3: Sync on tab focus — when user returns to the tab, pull latest from sheet
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && gsiIsReady()) {
+      gsiSyncOnLoad();
+    }
+  });
 }
 
 const MMM_REGISTRY_URL = 'https://script.google.com/macros/s/AKfycbyRymOkAu_PswGQMCwpwD6M0VCc9wx21BTW46Erlvrd_pzgR-e6tz4pioJ-8ys_r7vadQ/exec';
@@ -3346,14 +3375,15 @@ function gsiGetOrCreateUUID() {
 async function gsiRegisterUser(event = 'signin', email = null) {
   const uuid = gsiGetOrCreateUUID();
   const isFirstSignIn = !localStorage.getItem('mmm_registered');
-  // Restore email from localStorage if not passed
   if (!email) email = localStorage.getItem('mmm_gsi_email') || null;
+  const payload = { uuid, event: isFirstSignIn ? 'first_signin' : event, email };
+  console.log('Registry payload:', JSON.stringify(payload));
   try {
     const resp = await fetch(MMM_REGISTRY_URL, {
       method: 'POST',
       redirect: 'follow',
       headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify({ uuid, event: isFirstSignIn ? 'first_signin' : event, email }),
+      body: JSON.stringify(payload),
     });
     const text = await resp.text();
     console.log('Registry response:', text);
@@ -3380,17 +3410,20 @@ function gsiSignIn() {
       try {
         const info = await fetch(`https://www.googleapis.com/oauth2/v3/tokeninfo?access_token=${gsiAccessToken}`);
         const d    = await info.json();
+        console.log('tokeninfo response:', JSON.stringify(d));
         gsiUserName  = d.name || d.email || 'User';
         gsiUserEmail = d.email || null;
         localStorage.setItem('mmm_gsi_user', gsiUserName);
         if (gsiUserEmail) localStorage.setItem('mmm_gsi_email', gsiUserEmail);
-      } catch(e) { gsiUserName = 'User'; }
+      } catch(e) { gsiUserName = 'User'; console.log('tokeninfo error:', e); }
 
       // Register UUID + email with user registry
       gsiRegisterUser('signin', gsiUserEmail);
 
       gsiUpdateUI(true);
       await gsiEnsureSheet();
+      // Pull from sheet first (sheet is source of truth), then push local additions
+      await gsiPullAll();
       await gsiPushAll();
     },
   });
@@ -3524,27 +3557,24 @@ async function gsiSyncOnLoad() {
 async function gsiPullAll() {
   const sid = gsiSheetId;
 
-  // Pull Sessions
+  // Pull Sessions — sheet wins on conflict, local-only entries preserved
   const sessResp = await gsiSheetsRequest(`${SHEETS_API}/${sid}/values/Sessions!A2:N`, 'GET');
   const sessRows = sessResp?.values || [];
-  if (sessRows.length > 0) {
-    // Rebuild sessions from sheet — group by session ID
-    const sessMap = {};
-    for (const row of sessRows) {
-      const [sessId, date, exerciseId, type, weight, reps, rir, adj1rm, weightAtSession, ageAtSession, thresholdMult, , loggedAt, correctionOf] = row;
-      if (correctionOf) continue; // skip correction rows for now — latest correction wins handled below
-      if (!sessMap[sessId]) {
-        sessMap[sessId] = { id: sessId, date, exerciseId, weightKgAtSession: parseFloat(weightAtSession)||null, ageAtSession: parseFloat(ageAtSession)||null, thresholdMult: parseFloat(thresholdMult)||null, sets: [] };
-      }
-      sessMap[sessId].sets.push({ type, weight: parseFloat(weight), reps: parseInt(reps), rir: parseInt(rir), adj1rm: parseFloat(adj1rm) });
+  const sessMap = {};
+  for (const row of sessRows) {
+    const [sessId, date, exerciseId, type, weight, reps, rir, adj1rm, weightAtSession, ageAtSession, thresholdMult, , loggedAt, correctionOf] = row;
+    if (correctionOf) continue;
+    if (!sessMap[sessId]) {
+      sessMap[sessId] = { id: sessId, date, exerciseId, weightKgAtSession: parseFloat(weightAtSession)||null, ageAtSession: parseFloat(ageAtSession)||null, thresholdMult: parseFloat(thresholdMult)||null, sets: [] };
     }
-    // Merge with local — sheet is source of truth, local fills gaps
-    const sheetSessIds = new Set(Object.keys(sessMap));
-    const localOnly = state.sessions.filter(s => !sheetSessIds.has(s.id));
-    state.sessions = [...Object.values(sessMap), ...localOnly];
+    sessMap[sessId].sets.push({ type, weight: parseFloat(weight), reps: parseInt(reps), rir: parseInt(rir), adj1rm: parseFloat(adj1rm) });
   }
+  // Merge: sheet entries win on conflict, local-only entries (offline) preserved
+  const sheetSessIds = new Set(Object.keys(sessMap));
+  const localOnly = state.sessions.filter(s => !sheetSessIds.has(s.id));
+  state.sessions = [...Object.values(sessMap), ...localOnly];
 
-  // Pull Metrics
+  // Pull Metrics — same merge logic
   const metResp = await gsiSheetsRequest(`${SHEETS_API}/${sid}/values/Metrics!A2:O`, 'GET');
   const metRows = metResp?.values || [];
   if (metRows.length > 0) {
