@@ -3676,9 +3676,11 @@ async function gsiPullAll() {
     }
     sessMap[sessId].sets.push({ type, weight: parseFloat(weight), reps: parseInt(reps), rir: parseInt(rir), adj1rm: parseFloat(adj1rm) });
   }
-  // Merge: sheet entries win on conflict, local-only entries (offline) preserved
+  // Merge: sheet entries win, local-only entries preserved ONLY if in pending queue
+  // (pending queue = saved while offline, not yet pushed to sheet)
   const sheetSessIds = new Set(Object.keys(sessMap));
-  const localOnly = state.sessions.filter(s => !sheetSessIds.has(s.id));
+  const pendingIds = new Set(getPendingQueue().map(s => s.id));
+  const localOnly = state.sessions.filter(s => !sheetSessIds.has(s.id) && pendingIds.has(s.id));
   state.sessions = [...Object.values(sessMap), ...localOnly];
 
   // Pull Metrics — same merge logic
