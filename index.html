@@ -3585,7 +3585,7 @@ async function gsiEnsureSheet() {
     properties: { title: sheetName },
     sheets: [
       { properties: { title: 'Profile',  sheetId: 0 } },
-      { properties: { title: 'Sessions', sheetId: 1 } },
+      { properties: { title: 'Workouts', sheetId: 1 } },
       { properties: { title: 'Metrics',  sheetId: 2 } },
     ]
   });
@@ -3607,7 +3607,7 @@ async function gsiWriteHeaders() {
     values: [['Field', 'Value']]
   });
   // Sessions headers
-  await gsiSheetsRequest(`${SHEETS_API}/${sid}/values/Sessions!A1:N1?valueInputOption=RAW`, 'PUT', {
+  await gsiSheetsRequest(`${SHEETS_API}/${sid}/values/Workouts!A1:N1?valueInputOption=RAW`, 'PUT', {
     values: [['Session ID','Date','Exercise','Set Type','Weight (kg)','Reps','RIR','Adj 1RM (kg)','Weight at Session (kg)','Age at Session','Threshold Mult','Primary Muscle','Logged At','Correction Of']]
   });
   // Metrics headers
@@ -3639,7 +3639,7 @@ async function gsiAppendSession(sess) {
     '',
   ]);
   await gsiSheetsRequest(
-    `${SHEETS_API}/${sid}/values/Sessions!A:N:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS`,
+    `${SHEETS_API}/${sid}/values/Workouts!A:N:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS`,
     'POST',
     { values: rows }
   );
@@ -3665,7 +3665,7 @@ async function gsiPullAll() {
   const sid = gsiSheetId;
 
   // Pull Sessions — sheet wins on conflict, local-only entries preserved
-  const sessResp = await gsiSheetsRequest(`${SHEETS_API}/${sid}/values/Sessions!A2:N`, 'GET');
+  const sessResp = await gsiSheetsRequest(`${SHEETS_API}/${sid}/values/Workouts!A2:N`, 'GET');
   const sessRows = sessResp?.values || [];
   const sessMap = {};
   for (const row of sessRows) {
@@ -3764,7 +3764,7 @@ async function gsiPushSessions() {
     }
   }
   // Clear and rewrite (simpler than diffing)
-  await gsiSheetsRequest(`${SHEETS_API}/${gsiSheetId}/values/Sessions!A2:N?valueInputOption=RAW`, 'PUT', {
+  await gsiSheetsRequest(`${SHEETS_API}/${gsiSheetId}/values/Workouts!A2:N?valueInputOption=RAW`, 'PUT', {
     values: rows
   });
 }
